@@ -63,7 +63,7 @@ export async function GET() {
 
     return NextResponse.json({ murojaah });
   } catch (error: unknown) {
-    return NextResponse.json({ error: error.message || "An error occurred" }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(error) || "An error occurred" }, { status: 500 });
   }
 }
 

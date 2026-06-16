@@ -52,7 +52,7 @@ export async function GET() {
     return NextResponse.json({ ustadz });
   } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "An error occurred" },
+      { error: getErrorMessage(error) || "An error occurred" },
       { status: 500 }
     );
   }
