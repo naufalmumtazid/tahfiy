@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/database/supabase/server";
 import { verifyJWT } from "@/utils/jwt";
+import { getErrorMessage } from "@/utils/error";
 
 async function checkIsAdmin(): Promise<boolean> {
   try {
@@ -75,16 +76,16 @@ export async function PUT(
     const formattedSantri = {
       id: updatedSantri.id,
       user_id: updatedSantri.user_id,
-      name: (updatedSantri.users as any).name || "",
+      name: (updatedSantri.users as unknown as {name: string}).name || "",
       class: updatedSantri.class,
       halaqah_id: updatedSantri.halaqah_id,
-      halaqah_name: updatedSantri.halaqah ? (updatedSantri.halaqah as any).name : "N/A",
+      halaqah_name: updatedSantri.halaqah ? (updatedSantri.halaqah as unknown as {name: string}).name : "N/A",
     };
 
     return NextResponse.json({ santri: formattedSantri });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "An error occurred" },
+      { error: getErrorMessage(error) },
       { status: 500 }
     );
   }
@@ -121,9 +122,9 @@ export async function DELETE(
     if (error) throw error;
 
     return NextResponse.json({ success: true, message: "Santri deleted successfully" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "An error occurred" },
+      { error: getErrorMessage(error) },
       { status: 500 }
     );
   }

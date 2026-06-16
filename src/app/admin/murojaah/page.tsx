@@ -6,12 +6,13 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import Header from "@/components/Header";
 import Modal from "@/components/Modal";
+import { getErrorMessage } from "@/utils/error";
 import { Halaqah, Murojaah, SantriOption } from "@/types/murojaah";
 import { MurojaahFormValues, murojaahSchema } from "@/schemas/murojaah";
 
 export default function MurojaahPage() {
   const [murojaah, setMurojaah] = useState<Murojaah[]>([]);
-  const [halaqahs, setHalaqahs] = useState<Halaqah[]>([]);
+  const [, setHalaqahs] = useState<Halaqah[]>([]);
   const [santriOptions, setSantriOptions] = useState<SantriOption[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -49,8 +50,8 @@ export default function MurojaahPage() {
       const data = await response.json();
       setMurojaah(data.murojaah || []);
       setApiError(null);
-    } catch (err: any) {
-      setApiError(err.message);
+    } catch (err: unknown) {
+      setApiError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -81,9 +82,9 @@ export default function MurojaahPage() {
   };
 
   useEffect(() => {
-    fetchMurojaah();
-    fetchHalaqahs();
-    fetchSantriOptions();
+    void (async () => {
+      await Promise.all([fetchMurojaah(), fetchHalaqahs(), fetchSantriOptions()]);
+    })();
   }, []);
 
   const handleOpenCreate = () => {
@@ -149,8 +150,8 @@ export default function MurojaahPage() {
         modalType === "create" ? "Murojaah baru berhasil ditambahkan!" : "Data murojaah berhasil diperbarui!"
       );
       fetchMurojaah();
-    } catch (err: any) {
-      setFormError(err.message);
+    } catch (err: unknown) {
+      setFormError(getErrorMessage(err));
     } finally {
       setSubmitLoading(false);
     }
@@ -165,8 +166,8 @@ export default function MurojaahPage() {
       if (!response.ok) throw new Error(data.error || "Gagal menghapus murojaah.");
       toast.success(`Murojaah "${item.name}" berhasil dihapus.`);
       fetchMurojaah();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/database/supabase/server";
 import { verifyJWT } from "@/utils/jwt";
+import { getErrorMessage } from "@/utils/error";
 
 async function checkIsAdmin(): Promise<boolean> {
   try {
@@ -32,7 +33,15 @@ export async function GET() {
 
     if (error) throw error;
 
-    const ustadz = (data || []).map((u: any) => ({
+    type UstadzRow = {
+      id: number;
+      user_id: number;
+      specialization?: string;
+      phone?: string;
+      users?: { name?: string };
+    };
+
+    const ustadz = ((data || []) as UstadzRow[]).map((u) => ({
       id: u.id,
       user_id: u.user_id,
       name: u.users?.name || "",
@@ -41,7 +50,7 @@ export async function GET() {
     }));
 
     return NextResponse.json({ ustadz });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { error: error.message || "An error occurred" },
       { status: 500 }
@@ -131,7 +140,7 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "An error occurred" }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/database/supabase/server";
 import { verifyJWT } from "@/utils/jwt";
+import { getErrorMessage } from "@/utils/error";
 import bcrypt from "bcryptjs";
 
 function generateUsername(name: string) {
@@ -43,7 +44,16 @@ export async function GET() {
 
     if (error) throw error;
 
-    const santri = (santriData || []).map((s: any) => ({
+    type SantriRow = {
+      id: number;
+      user_id: number;
+      class: string;
+      halaqah_id: number;
+      users?: { name?: string };
+      halaqah?: { name?: string };
+    };
+
+    const santri = ((santriData || []) as SantriRow[]).map((s) => ({
       id: s.id,
       user_id: s.user_id,
       name: s.users?.name || "",
@@ -53,9 +63,9 @@ export async function GET() {
     }));
 
     return NextResponse.json({ santri });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "An error occurred" },
+      { error: getErrorMessage(error) || "An error occurred" },
       { status: 500 }
     );
   }
@@ -120,19 +130,20 @@ export async function POST(request: Request) {
       throw santriError || new Error("Failed to create santri entry.");
     }
 
+    
     const formattedSantri = {
       id: newSantri.id,
       user_id: newSantri.user_id,
-      name: (newSantri.users as any)?.name || "",
+      name: (newSantri.users as unknown as {name: string})?.name || "",
       class: newSantri.class,
       halaqah_id: newSantri.halaqah_id,
-      halaqah_name: newSantri.halaqah ? (newSantri.halaqah as any).name : "N/A",
+      halaqah_name: newSantri.halaqah ? (newSantri.halaqah as unknown as {name: string}).name : "N/A",
     };
 
     return NextResponse.json({ santri: formattedSantri }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "An error occurred" },
+      { error: getErrorMessage(error) },
       { status: 500 }
     );
   }

@@ -5,6 +5,7 @@ import { FiUserPlus, FiEdit2, FiTrash2, FiSearch, FiAlertCircle } from "react-ic
 import { toast } from "react-toastify";
 import Header from "@/components/Header";
 import Modal from "@/components/Modal";
+import { getErrorMessage } from "@/utils/error";
 
 interface User {
   id: number;
@@ -43,15 +44,17 @@ export default function UserManagementPage() {
       const data = await response.json();
       setUsers(data.users || []);
       setApiError(null);
-    } catch (err: any) {
-      setApiError(err.message);
+    } catch (err: unknown) {
+      setApiError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
+    void (async () => {
+      await fetchUsers();
+    })();
   }, []);
 
   const handleOpenCreate = () => {
@@ -110,9 +113,10 @@ export default function UserManagementPage() {
         modalType === "create" ? "Pengguna baru berhasil ditambahkan!" : "Pengguna berhasil diperbarui!"
       );
       fetchUsers();
-    } catch (err: any) {
-      toast.error(err.message);
-      setFormError(err.message);
+    } catch (err: unknown) {
+      const errorMessage = getErrorMessage(err);
+      toast.error(errorMessage);
+      setFormError(errorMessage);
     } finally {
       setSubmitLoading(false);
     }
@@ -131,8 +135,9 @@ export default function UserManagementPage() {
       if (!response.ok) throw new Error(data.error || "Gagal menghapus pengguna.");
       toast.success(`Pengguna "${user.username}" berhasil dihapus.`);
       fetchUsers();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const errorMessage = getErrorMessage(err);
+      toast.error(errorMessage);
     }
   };
 
@@ -308,7 +313,12 @@ export default function UserManagementPage() {
               </label>
               <select
                 value={roleInput}
-                onChange={(e) => setRoleInput(e.target.value as any)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === "admin" || value === "ustadz" || value === "santri") {
+                    setRoleInput(value);
+                  }
+                }}
                 className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-700 bg-white"
               >
                 <option value="santri">Santri</option>

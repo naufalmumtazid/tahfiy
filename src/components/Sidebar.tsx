@@ -10,7 +10,6 @@ import { getCurrentUser, logoutAction, type AuthUser } from "@/actions/auth";
 import logoImg from "@/assets/logo.png";
 
 interface SidebarProps {
-    activeTab?: string;
     setActiveTab?: (tab: string) => void;
 }
 
@@ -24,7 +23,7 @@ const menuItems = [
     { id: "users", label: "Users", icon: FiUsers, href: "/admin/users" },
 ];
 
-export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
+export default function Sidebar({ setActiveTab }: SidebarProps) {
     const [user, setUser] = useState<AuthUser | null>(null);
     const pathname = usePathname();
 

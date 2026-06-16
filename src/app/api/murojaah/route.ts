@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/database/supabase/server";
 import { verifyJWT } from "@/utils/jwt";
+import { getErrorMessage } from "@/utils/error";
 
 async function checkIsAdmin(): Promise<boolean> {
   try {
@@ -34,7 +35,21 @@ export async function GET() {
 
     if (error) throw error;
 
-    const murojaah = (murojaahData || []).map((m: any) => ({
+    type MurojaahRow = {
+      id: number;
+      santri_id: number;
+      date: string;
+      juz: number;
+      start_page: number;
+      end_page: number;
+      santri?: Array<{
+        class?: string;
+        halaqah?: Array<{ name?: string }>;
+        users?: Array<{ name?: string }>;
+      }>;
+    };
+
+    const murojaah = ((murojaahData || []) as MurojaahRow[]).map((m) => ({
       id: m.id,
       santri_id: m.santri_id,
       date: m.date,
@@ -47,7 +62,7 @@ export async function GET() {
     }));
 
     return NextResponse.json({ murojaah });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({ error: error.message || "An error occurred" }, { status: 500 });
   }
 }
@@ -100,7 +115,7 @@ export async function POST(request: Request) {
     };
 
     return NextResponse.json({ murojaah: formatted }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "An error occurred" }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }

@@ -5,6 +5,7 @@ import { FiUserPlus, FiEdit2, FiTrash2, FiSearch, FiAlertCircle } from "react-ic
 import { toast } from "react-toastify";
 import Header from "@/components/Header";
 import Modal from "@/components/Modal";
+import { getErrorMessage } from "@/utils/error";
 
 interface Halaqah {
   id: number;
@@ -49,8 +50,8 @@ export default function SantriPage() {
       const data = await response.json();
       setSantri(data.santri || []);
       setApiError(null);
-    } catch (err: any) {
-      setApiError(err.message);
+    } catch (err: unknown) {
+      setApiError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -69,8 +70,9 @@ export default function SantriPage() {
   };
 
   useEffect(() => {
-    fetchSantri();
-    fetchHalaqahs();
+    void (async () => {
+      await Promise.all([fetchSantri(), fetchHalaqahs()]);
+    })();
   }, []);
 
   const handleOpenCreate = () => {
@@ -116,8 +118,8 @@ export default function SantriPage() {
         modalType === "create" ? "Santri baru berhasil ditambahkan!" : "Data santri berhasil diperbarui!"
       );
       fetchSantri();
-    } catch (err: any) {
-      setFormError(err.message);
+    } catch (err: unknown) {
+      setFormError(getErrorMessage(err));
     } finally {
       setSubmitLoading(false);
     }
@@ -132,8 +134,8 @@ export default function SantriPage() {
       if (!response.ok) throw new Error(data.error || "Gagal menghapus santri.");
       toast.success(`Santri "${santri.name}" berhasil dihapus.`);
       fetchSantri();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 

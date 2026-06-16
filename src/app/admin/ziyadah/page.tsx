@@ -7,11 +7,12 @@ import { toast } from "react-toastify";
 import Header from "@/components/Header";
 import Modal from "@/components/Modal";
 import { Halaqah, SantriOption, Ziyadah } from "@/types/ziyadah";
+import { getErrorMessage } from "@/utils/error";
 import { ZiyadahFormValues, ziyadahSchema } from "@/schemas/ziyadah";
 
 export default function ZiyadahPage() {
   const [ziyadah, setZiyadah] = useState<Ziyadah[]>([]);
-  const [halaqahs, setHalaqahs] = useState<Halaqah[]>([]);
+  const [, setHalaqahs] = useState<Halaqah[]>([]);
   const [santriOptions, setSantriOptions] = useState<SantriOption[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -52,8 +53,8 @@ export default function ZiyadahPage() {
       const data = await response.json();
       setZiyadah(data.ziyadah || []);
       setApiError(null);
-    } catch (err: any) {
-      setApiError(err.message);
+    } catch (err: unknown) {
+      setApiError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -84,9 +85,9 @@ export default function ZiyadahPage() {
   };
 
   useEffect(() => {
-    fetchZiyadah();
-    fetchHalaqahs();
-    fetchSantriOptions();
+    void (async () => {
+      await Promise.all([fetchZiyadah(), fetchHalaqahs(), fetchSantriOptions()]);
+    })();
   }, []);
 
   const handleOpenCreate = () => {
@@ -152,8 +153,8 @@ export default function ZiyadahPage() {
         modalType === "create" ? "Ziyadah baru berhasil ditambahkan!" : "Data ziyadah berhasil diperbarui!"
       );
       fetchZiyadah();
-    } catch (err: any) {
-      setFormError(err.message);
+    } catch (err: unknown) {
+      setFormError(getErrorMessage(err));
     } finally {
       setSubmitLoading(false);
     }
@@ -168,8 +169,8 @@ export default function ZiyadahPage() {
       if (!response.ok) throw new Error(data.error || "Gagal menghapus ziyadah.");
       toast.success(`Ziyadah "${ziyadah.name}" berhasil dihapus.`);
       fetchZiyadah();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 

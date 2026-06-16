@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/database/supabase/server";
 import { verifyJWT } from "@/utils/jwt";
+import { getErrorMessage } from "@/utils/error";
 
 // Helper to check if the current requester is an admin
 async function checkIsAdmin(): Promise<boolean> {
@@ -35,9 +36,9 @@ export async function GET() {
     if (error) throw error;
 
     return NextResponse.json({ ustadz: data || [] });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "An error occurred" },
+      { error: getErrorMessage(error) },
       { status: 500 }
     );
   }
@@ -81,7 +82,7 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "An error occurred" }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }

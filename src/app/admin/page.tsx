@@ -1,7 +1,6 @@
 "use client";
 
-import { FiUsers, FiBookOpen, FiUserPlus, FiBarChart2, FiChevronRight, FiStar } from "react-icons/fi";
-import { FaStar } from "react-icons/fa";
+// import { FiUsers, FiUserPlus, FiBarChart2, FiChevronRight } from "react-icons/fi";
 import Header from "@/components/Header";
 
 export default function AdminDashboard() {

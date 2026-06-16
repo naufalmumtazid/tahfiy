@@ -78,8 +78,8 @@ export async function PUT(
     };
 
     return NextResponse.json({ ziyadah: formatted });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "An error occurred" }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }
 
@@ -113,7 +113,7 @@ export async function DELETE(
     if (error) throw error;
 
     return NextResponse.json({ success: true, message: "Ziyadah deleted successfully" });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "An error occurred" }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }

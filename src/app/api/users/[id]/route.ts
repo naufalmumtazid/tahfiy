@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/database/supabase/server";
 import { verifyJWT } from "@/utils/jwt";
+import { getErrorMessage } from "@/utils/error";
 import bcrypt from "bcryptjs";
 
 async function checkIsAdmin(): Promise<boolean> {
@@ -56,7 +57,12 @@ export async function PUT(
       );
     }
 
-    const updateData: any = {
+    const updateData: {
+      username: string;
+      role: string;
+      name: string;
+      password?: string;
+    } = {
       username,
       role,
       name,
@@ -78,9 +84,9 @@ export async function PUT(
     if (error) throw error;
 
     return NextResponse.json({ user: updatedUser });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "An error occurred" },
+      { error: getErrorMessage(error) },
       { status: 500 }
     );
   }
@@ -107,9 +113,9 @@ export async function DELETE(
     if (error) throw error;
 
     return NextResponse.json({ success: true, message: "User deleted successfully" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "An error occurred" },
+      { error: getErrorMessage(error) },
       { status: 500 }
     );
   }

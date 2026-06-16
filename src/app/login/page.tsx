@@ -26,7 +26,7 @@ function LoginForm() {
 
     const formData = new FormData(e.currentTarget);
     try {
-      const result = await loginAction(null, formData);
+      const result = await loginAction(formData);
       if (result.error) {
         setError(result.error);
         setLoading(false);

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/database/supabase/server";
 import { verifyJWT } from "@/utils/jwt";
+import { getErrorMessage } from "@/utils/error";
 import bcrypt from "bcryptjs";
 
 async function checkIsAdmin(): Promise<boolean> {
@@ -51,9 +52,9 @@ export async function GET(request: Request) {
     if (error) throw error;
 
     return NextResponse.json({ users });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "An error occurred" },
+      { error: getErrorMessage(error) },
       { status: 500 }
     );
   }
@@ -111,9 +112,9 @@ export async function POST(request: Request) {
     if (error) throw error;
 
     return NextResponse.json({ user: newUser }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "An error occurred" },
+      { error: getErrorMessage(error) },
       { status: 500 }
     );
   }

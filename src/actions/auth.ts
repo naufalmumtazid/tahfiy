@@ -13,7 +13,7 @@ export interface AuthUser {
   role: "admin" | "ustadz" | "santri";
 }
 
-export async function loginAction(prevState: any, formData: FormData) {
+export async function loginAction(formData: FormData) {
   const username = formData.get("username")?.toString().trim();
   const password = formData.get("password")?.toString();
 
@@ -118,7 +118,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       username: payload.username,
       role: payload.role,
     };
-  } catch (err) {
+  } catch {
     return null;
   }
 }

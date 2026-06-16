@@ -5,6 +5,7 @@ import { FiUserPlus, FiEdit2, FiTrash2, FiSearch, FiAlertCircle } from "react-ic
 import { toast } from "react-toastify";
 import Header from "@/components/Header";
 import Modal from "@/components/Modal";
+import { getErrorMessage } from "@/utils/error";
 
 interface Ustadz {
   id: number;
@@ -45,12 +46,10 @@ export default function UstadzPage() {
         throw new Error(data.error || "Gagal memuat daftar pengguna.");
       }
       const data = await response.json();
-      const users: AvailableUser[] = (data.users || []).filter(
-        (user: any) => user.role === "ustadz"
-      );
-      setAvailableUsers(users);
-    } catch (err: any) {
-      console.error(err);
+      const users = (data.users || []) as Array<AvailableUser & { role?: string }>;
+      setAvailableUsers(users.filter((user) => user.role === "ustadz"));
+    } catch (err: unknown) {
+      console.error(getErrorMessage(err));
     }
   };
 
@@ -65,16 +64,17 @@ export default function UstadzPage() {
       const data = await response.json();
       setUstadz(data.ustadz || []);
       setApiError(null);
-    } catch (err: any) {
-      setApiError(err.message);
+    } catch (err: unknown) {
+      setApiError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUstadz();
-    fetchAvailableUsers();
+    void (async () => {
+      await Promise.all([fetchUstadz(), fetchAvailableUsers()]);
+    })();
   }, []);
 
   const handleOpenCreate = () => {
@@ -122,8 +122,8 @@ export default function UstadzPage() {
       setIsModalOpen(false);
       toast.success(modalType === "create" ? "Ustadz berhasil ditambahkan!" : "Data ustadz berhasil diperbarui!");
       fetchUstadz();
-    } catch (err: any) {
-      setFormError(err.message);
+    } catch (err: unknown) {
+      setFormError(getErrorMessage(err));
     } finally {
       setSubmitLoading(false);
     }
@@ -138,8 +138,8 @@ export default function UstadzPage() {
       if (!response.ok) throw new Error(data.error || "Gagal menghapus ustadz.");
       toast.success(`Ustadz "${ustadz.name}" berhasil dihapus.`);
       fetchUstadz();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 

@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { FiBookOpen, FiEdit2, FiTrash2, FiSearch, FiAlertCircle, FiUserPlus } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiSearch, FiAlertCircle, FiUserPlus } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Header from "@/components/Header";
 import Modal from "@/components/Modal";
+import { getErrorMessage } from "@/utils/error";
 
 interface Halaqah {
   id: number;
@@ -45,8 +46,8 @@ export default function HalaqahPage() {
       const data = await response.json();
       setHalaqahs(data.halaqahs || []);
       setApiError(null);
-    } catch (err: any) {
-      setApiError(err.message);
+    } catch (err: unknown) {
+      setApiError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -65,8 +66,9 @@ export default function HalaqahPage() {
   };
 
   useEffect(() => {
-    fetchHalaqahs();
-    fetchUstadz();
+    void (async () => {
+      await Promise.all([fetchHalaqahs(), fetchUstadz()]);
+    })();
   }, []);
 
   const handleOpenCreate = () => {
@@ -108,8 +110,8 @@ export default function HalaqahPage() {
       setIsModalOpen(false);
       toast.success(modalType === "create" ? "Halaqah berhasil ditambahkan!" : "Data halaqah berhasil diperbarui!");
       fetchHalaqahs();
-    } catch (err: any) {
-      setFormError(err.message);
+    } catch (err: unknown) {
+      setFormError(getErrorMessage(err));
     } finally {
       setSubmitLoading(false);
     }
@@ -124,8 +126,8 @@ export default function HalaqahPage() {
       if (!response.ok) throw new Error(data.error || "Gagal menghapus halaqah.");
       toast.success(`Halaqah "${halaqah.name}" berhasil dihapus.`);
       fetchHalaqahs();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 

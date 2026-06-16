@@ -5,7 +5,6 @@ import Link from "next/link";
 import { FiHome, FiBookOpen, FiUsers, FiBarChart2 } from "react-icons/fi";
 
 interface MobileNavProps {
-  activeTab?: string;
   setActiveTab?: (tab: string) => void;
 }
 
@@ -16,7 +15,7 @@ const navItems = [
   { id: "progress", label: "Progress", icon: FiBarChart2, href: "/admin/progress" },
 ];
 
-export default function MobileNav({ activeTab, setActiveTab }: MobileNavProps) {
+export default function MobileNav({ setActiveTab }: MobileNavProps) {
   const pathname = usePathname();
 
   return (

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/database/supabase/server";
 import { verifyJWT } from "@/utils/jwt";
+import { getErrorMessage } from "@/utils/error";
 
 async function checkIsAdmin(): Promise<boolean> {
   try {
@@ -81,9 +82,9 @@ export async function PUT(
         phone: updatedUstadz.phone || "",
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "An error occurred" },
+      { error: getErrorMessage(error) || "An error occurred" },
       { status: 500 }
     );
   }
@@ -120,9 +121,9 @@ export async function DELETE(
     if (error) throw error;
 
     return NextResponse.json({ success: true, message: "Ustadz deleted successfully" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "An error occurred" },
+      { error: getErrorMessage(error) || "An error occurred" },
       { status: 500 }
     );
   }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/database/supabase/server";
 import { verifyJWT } from "@/utils/jwt";
+import { getErrorMessage } from "@/utils/error";
 
 async function checkIsAdmin(): Promise<boolean> {
   try {
@@ -58,8 +59,8 @@ export async function PUT(
         ustadz_name: updated.ustadz?.[0]?.users?.[0]?.name || "N/A",
       },
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "An error occurred" }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: getErrorMessage(error) || "An error occurred" }, { status: 500 });
   }
 }
 
@@ -84,7 +85,7 @@ export async function DELETE(
     if (error) throw error;
 
     return NextResponse.json({ success: true, message: "Halaqah deleted successfully" });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "An error occurred" }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }
