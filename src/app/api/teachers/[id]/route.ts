@@ -15,14 +15,14 @@ async function checkIsAdmin(): Promise<boolean> {
   }
 }
 
-// PUT /api/halaqah/[id] - Update halaqah (Admin only)
+// PUT /api/teachers/[id] - Update teacher (Admin only)
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const halaqahId = parseInt(id, 10);
+    const teacherId = parseInt(id, 10);
 
     const isAdmin = await checkIsAdmin();
     if (!isAdmin) {
@@ -30,11 +30,11 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, ustadz_id } = body;
+    const { name } = body;
 
-    if (!name || !ustadz_id) {
+    if (!name) {
       return NextResponse.json(
-        { error: "Nama halaqah dan teacher wajib diisi." },
+        { error: "Nama teacher wajib diisi." },
         { status: 400 }
       );
     }
@@ -42,37 +42,37 @@ export async function PUT(
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    const { data: updated, error } = await supabase
-      .from("halaqah")
-      .update({ name, ustadz_id: parseInt(ustadz_id, 10) })
-      .eq("id", halaqahId)
-      .select("id, name, ustadz_id, ustadz(name)")
+    const { data: updatedTeacher, error } = await supabase
+      .from("ustadz")
+      .update({ name })
+      .eq("id", teacherId)
+      .select("id, name")
       .single();
 
     if (error) throw error;
 
     return NextResponse.json({
-      halaqah: {
-        id: updated.id,
-        name: updated.name,
-        ustadz_id: updated.ustadz_id,
-        ustadz_name: updated.ustadz ? (updated.ustadz as any).name : "N/A",
-        teacher_name: updated.ustadz ? (updated.ustadz as any).name : "N/A",
+      teacher: {
+        id: updatedTeacher.id,
+        name: updatedTeacher.name,
       },
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "An error occurred" }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "An error occurred" },
+      { status: 500 }
+    );
   }
 }
 
-// DELETE /api/halaqah/[id] - Delete halaqah (Admin only)
+// DELETE /api/teachers/[id] - Delete teacher (Admin only)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const halaqahId = parseInt(id, 10);
+    const teacherId = parseInt(id, 10);
 
     const isAdmin = await checkIsAdmin();
     if (!isAdmin) {
@@ -82,12 +82,15 @@ export async function DELETE(
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    const { error } = await supabase.from("halaqah").delete().eq("id", halaqahId);
+    const { error } = await supabase.from("ustadz").delete().eq("id", teacherId);
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, message: "Halaqah deleted successfully" });
+    return NextResponse.json({ success: true, message: "Teacher deleted successfully" });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "An error occurred" }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "An error occurred" },
+      { status: 500 }
+    );
   }
 }

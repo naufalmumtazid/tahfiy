@@ -10,16 +10,17 @@ interface Halaqah {
   name: string;
   ustadz_id: number;
   ustadz_name: string;
+  teacher_name: string;
 }
 
-interface Ustadz {
+interface Teacher {
   id: number;
   name: string;
 }
 
 export default function HalaqahPage() {
   const [halaqahs, setHalaqahs] = useState<Halaqah[]>([]);
-  const [ustadzList, setUstadzList] = useState<Ustadz[]>([]);
+  const [teacherList, setTeacherList] = useState<Teacher[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -30,7 +31,7 @@ export default function HalaqahPage() {
   const [selectedHalaqah, setSelectedHalaqah] = useState<Halaqah | null>(null);
 
   const [nameInput, setNameInput] = useState("");
-  const [ustadzInput, setUstadzInput] = useState<number | "">("");
+  const [teacherInput, setTeacherInput] = useState<number | "">("");
   const [submitLoading, setSubmitLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -52,12 +53,12 @@ export default function HalaqahPage() {
     }
   };
 
-  const fetchUstadz = async () => {
+  const fetchTeachers = async () => {
     try {
-      const response = await fetch("/api/ustadz");
+      const response = await fetch("/api/teachers");
       if (response.ok) {
         const data = await response.json();
-        setUstadzList(data.ustadz || []);
+        setTeacherList(data.teachers || []);
       }
     } catch {
       // ignore here; used only for select options
@@ -66,7 +67,7 @@ export default function HalaqahPage() {
 
   useEffect(() => {
     fetchHalaqahs();
-    fetchUstadz();
+    fetchTeachers();
   }, []);
 
   const triggerSuccess = (message: string) => {
@@ -78,7 +79,7 @@ export default function HalaqahPage() {
     setModalType("create");
     setSelectedHalaqah(null);
     setNameInput("");
-    setUstadzInput(ustadzList[0]?.id ?? "");
+    setTeacherInput(teacherList[0]?.id ?? "");
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -87,7 +88,7 @@ export default function HalaqahPage() {
     setModalType("edit");
     setSelectedHalaqah(halaqah);
     setNameInput(halaqah.name);
-    setUstadzInput(halaqah.ustadz_id);
+    setTeacherInput(halaqah.ustadz_id);
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -100,7 +101,7 @@ export default function HalaqahPage() {
     try {
       const url = modalType === "create" ? "/api/halaqah" : `/api/halaqah/${selectedHalaqah?.id}`;
       const method = modalType === "create" ? "POST" : "PUT";
-      const payload = { name: nameInput, ustadz_id: ustadzInput };
+      const payload = { name: nameInput, ustadz_id: teacherInput };
 
       const response = await fetch(url, {
         method,
@@ -137,14 +138,14 @@ export default function HalaqahPage() {
   const filteredHalaqahs = halaqahs.filter(
     (h) =>
       h.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      h.ustadz_name.toLowerCase().includes(searchQuery.toLowerCase())
+      h.teacher_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <>
       <Header
         title="Manajemen Halaqah"
-        subtitle="Kelola daftar halaqah dan ustadz pengajar dalam sistem"
+        subtitle="Kelola daftar halaqah dan teacher pengajar dalam sistem"
         showNewSession={false}
         showSearch={false}
       />
@@ -162,7 +163,7 @@ export default function HalaqahPage() {
             <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Cari berdasarkan nama halaqah atau ustadz..."
+              placeholder="Cari berdasarkan nama halaqah atau teacher..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-sm bg-gray-50/50"
@@ -193,7 +194,7 @@ export default function HalaqahPage() {
               <tr className="border-b border-blue-50 text-left text-gray-400 font-medium">
                 <th className="py-4 px-2 text-xs uppercase tracking-wider">ID</th>
                 <th className="py-4 px-4 text-xs uppercase tracking-wider">Nama Halaqah</th>
-                <th className="py-4 px-4 text-xs uppercase tracking-wider">Ustadz</th>
+                <th className="py-4 px-4 text-xs uppercase tracking-wider">Teacher</th>
                 <th className="py-4 px-4 text-xs uppercase tracking-wider text-right">Aksi</th>
               </tr>
             </thead>
@@ -218,7 +219,7 @@ export default function HalaqahPage() {
                   <tr key={halaqah.id} className="hover:bg-blue-50/20 transition-colors">
                     <td className="py-4 px-2 font-medium text-gray-400">#{halaqah.id}</td>
                     <td className="py-4 px-4 font-semibold text-gray-700">{halaqah.name}</td>
-                    <td className="py-4 px-4 text-gray-600">{halaqah.ustadz_name}</td>
+                    <td className="py-4 px-4 text-gray-600">{halaqah.teacher_name}</td>
                     <td className="py-4 px-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button
@@ -275,17 +276,17 @@ export default function HalaqahPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Ustadz
+                Teacher
               </label>
-              {ustadzList.length > 0 ? (
+              {teacherList.length > 0 ? (
                 <select
                   required
-                  value={ustadzInput}
-                  onChange={(e) => setUstadzInput(Number(e.target.value))}
+                  value={teacherInput}
+                  onChange={(e) => setTeacherInput(Number(e.target.value))}
                   className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-700 bg-white"
                 >
-                  <option value="">-- Pilih Ustadz --</option>
-                  {ustadzList.map((u) => (
+                  <option value="">-- Pilih Teacher --</option>
+                  {teacherList.map((u) => (
                     <option key={u.id} value={u.id}>
                       {u.name}
                     </option>
@@ -293,7 +294,7 @@ export default function HalaqahPage() {
                 </select>
               ) : (
                 <div className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3">
-                  Tidak ada data ustadz. Tambahkan ustadz terlebih dahulu supaya halaqah bisa dibuat.
+                  Tidak ada data teacher. Tambahkan teacher terlebih dahulu supaya halaqah bisa dibuat.
                 </div>
               )}
             </div>
@@ -309,7 +310,7 @@ export default function HalaqahPage() {
             </button>
             <button
               type="submit"
-              disabled={submitLoading || ustadzList.length === 0}
+              disabled={submitLoading || teacherList.length === 0}
               className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-blue-500/10 flex items-center gap-2 cursor-pointer"
             >
               {submitLoading ? "Memproses..." : "Simpan"}

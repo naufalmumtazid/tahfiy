@@ -20,7 +20,7 @@ const menuItems = [
     { id: "murojaah", label: "Murojaah", icon: FiBookOpen, href: "/admin/quran/murojaah" },
     { id: "halaqah", label: "Halaqah", icon: MdOutlineNotes, href: "/admin/halaqah" },
     { id: "students", label: "Santri", icon: MdPeople, href: "/admin/students" },
-    { id: "teachers", label: "Ustadz", icon: MdPeople, href: "/admin/teachers" },
+    { id: "teachers", label: "Teachers", icon: MdPeople, href: "/admin/teachers" },
     { id: "users", label: "Users", icon: FiUsers, href: "/admin/users" },
 ];
 

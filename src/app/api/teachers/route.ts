@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/database/supabase/server";
 import { verifyJWT } from "@/utils/jwt";
 
+// Helper to check if the current requester is an admin
 async function checkIsAdmin(): Promise<boolean> {
   try {
     const cookieStore = await cookies();
@@ -15,7 +16,7 @@ async function checkIsAdmin(): Promise<boolean> {
   }
 }
 
-// GET /api/halaqah - Fetch all halaqah with teacher name
+// GET /api/teachers - Fetch all teachers
 export async function GET() {
   try {
     const isAdmin = await checkIsAdmin();
@@ -27,27 +28,22 @@ export async function GET() {
     const supabase = createClient(cookieStore);
 
     const { data, error } = await supabase
-      .from("halaqah")
-      .select("id, name, ustadz_id, ustadz(name)")
+      .from("ustadz")
+      .select("id, name")
       .order("id", { ascending: true });
 
     if (error) throw error;
 
-    const halaqahs = (data || []).map((h: any) => ({
-      id: h.id,
-      name: h.name,
-      ustadz_id: h.ustadz_id,
-      ustadz_name: h.ustadz ? h.ustadz.name : "N/A",
-      teacher_name: h.ustadz ? h.ustadz.name : "N/A",
-    }));
-
-    return NextResponse.json({ halaqahs });
+    return NextResponse.json({ teachers: data || [] });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "An error occurred" }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "An error occurred" },
+      { status: 500 }
+    );
   }
 }
 
-// POST /api/halaqah - Create a new halaqah (Admin only)
+// POST /api/teachers - Create a new teacher (Admin only)
 export async function POST(request: Request) {
   try {
     const isAdmin = await checkIsAdmin();
@@ -56,11 +52,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, ustadz_id } = body;
+    const { name } = body;
 
-    if (!name || !ustadz_id) {
+    if (!name) {
       return NextResponse.json(
-        { error: "Nama halaqah dan teacher wajib diisi." },
+        { error: "Nama teacher wajib diisi." },
         { status: 400 }
       );
     }
@@ -68,22 +64,19 @@ export async function POST(request: Request) {
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    const { data: newHalaqah, error } = await supabase
-      .from("halaqah")
-      .insert([{ name, ustadz_id: parseInt(ustadz_id, 10) }])
-      .select("id, name, ustadz_id, ustadz(name)")
+    const { data: newTeacher, error } = await supabase
+      .from("ustadz")
+      .insert([{ name }])
+      .select("id, name")
       .single();
 
     if (error) throw error;
 
     return NextResponse.json(
       {
-        halaqah: {
-          id: newHalaqah.id,
-          name: newHalaqah.name,
-          ustadz_id: newHalaqah.ustadz_id,
-          ustadz_name: newHalaqah.ustadz ? (newHalaqah.ustadz as any).name : "N/A",
-          teacher_name: newHalaqah.ustadz ? (newHalaqah.ustadz as any).name : "N/A",
+        teacher: {
+          id: newTeacher.id,
+          name: newTeacher.name,
         },
       },
       { status: 201 }
