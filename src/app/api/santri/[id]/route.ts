@@ -75,10 +75,10 @@ export async function PUT(
     const formattedSantri = {
       id: updatedSantri.id,
       user_id: updatedSantri.user_id,
-      name: updatedSantri.users?.name || "",
+      name: (updatedSantri.users as any).name || "",
       class: updatedSantri.class,
       halaqah_id: updatedSantri.halaqah_id,
-      halaqah_name: updatedSantri.halaqah ? updatedSantri.halaqah.name : "N/A",
+      halaqah_name: updatedSantri.halaqah ? (updatedSantri.halaqah as any).name : "N/A",
     };
 
     return NextResponse.json({ santri: formattedSantri });
