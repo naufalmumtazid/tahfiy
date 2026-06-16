@@ -16,10 +16,11 @@ interface SidebarProps {
 
 const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: MdDashboard, href: "/admin" },
-    { id: "quran", label: "Quran", icon: FiBookOpen, href: "/admin/quran" },
-    { id: "students", label: "Students", icon: MdPeople, href: "/admin/students" },
-    { id: "progress", label: "Progress", icon: MdAnalytics, href: "/admin/progress" },
-    { id: "teachers", label: "Teachers", icon: MdSchool, href: "/admin/teachers" },
+    { id: "ziyadah", label: "Ziyadah", icon: FiBookOpen, href: "/admin/quran/ziyadah" },
+    { id: "murojaah", label: "Murojaah", icon: FiBookOpen, href: "/admin/quran/murojaah" },
+    { id: "halaqah", label: "Halaqah", icon: MdAnalytics, href: "/admin/halaqah" },
+    { id: "students", label: "Santri", icon: MdPeople, href: "/admin/students" },
+    { id: "teachers", label: "Ustadz", icon: MdSchool, href: "/admin/teachers" },
     { id: "users", label: "Users", icon: FiUsers, href: "/admin/users" },
 ];
 
@@ -71,15 +72,15 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                     {menuItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = pathname === item.href || (item.id === "dashboard" && pathname === "/admin");
-                        
+
                         return (
                             <Link
                                 key={item.id}
                                 href={item.href}
                                 onClick={() => setActiveTab?.(item.id)}
                                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium ${isActive
-                                        ? "bg-blue-50 text-blue-700 shadow-sm"
-                                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                    ? "bg-blue-50 text-blue-700 shadow-sm"
+                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                                     }`}
                             >
                                 <Icon className="w-5 h-5" />

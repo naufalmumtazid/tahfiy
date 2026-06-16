@@ -5,14 +5,22 @@ import { FiUserPlus, FiEdit2, FiTrash2, FiSearch, FiAlertCircle, FiCheckCircle }
 import Header from "@/components/Header";
 import Modal from "@/components/Modal";
 
-interface User {
+interface Halaqah {
   id: number;
-  username: string;
-  role: "admin" | "ustadz" | "student";
+  name: string;
 }
 
-export default function UserManagementPage() {
-  const [users, setUsers] = useState<User[]>([]);
+interface Student {
+  id: number;
+  name: string;
+  class: string;
+  halaqah_id: number;
+  halaqah_name: string;
+}
+
+export default function StudentsPage() {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [halaqahs, setHalaqahs] = useState<Halaqah[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -21,25 +29,25 @@ export default function UserManagementPage() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit">("create");
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   // Form State
-  const [usernameInput, setUsernameInput] = useState("");
-  const [passwordInput, setPasswordInput] = useState("");
-  const [roleInput, setRoleInput] = useState<"admin" | "ustadz" | "student">("student");
+  const [nameInput, setNameInput] = useState("");
+  const [classInput, setClassInput] = useState("");
+  const [halaqahInput, setHalaqahInput] = useState<number | "">("");
   const [submitLoading, setSubmitLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const fetchUsers = async () => {
+  const fetchStudents = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/users");
+      const response = await fetch("/api/students");
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Gagal memuat daftar pengguna.");
+        const data = await response.json();
+        throw new Error(data.error || "Gagal memuat daftar santri.");
       }
       const data = await response.json();
-      setUsers(data.users || []);
+      setStudents(data.students || []);
       setApiError(null);
     } catch (err: any) {
       setApiError(err.message);
@@ -48,8 +56,21 @@ export default function UserManagementPage() {
     }
   };
 
+  const fetchHalaqahs = async () => {
+    try {
+      const response = await fetch("/api/halaqah");
+      if (response.ok) {
+        const data = await response.json();
+        setHalaqahs(data.halaqahs || []);
+      }
+    } catch {
+      // Silently fail – halaqah list is a convenience feature
+    }
+  };
+
   useEffect(() => {
-    fetchUsers();
+    fetchStudents();
+    fetchHalaqahs();
   }, []);
 
   const triggerSuccess = (message: string) => {
@@ -59,20 +80,20 @@ export default function UserManagementPage() {
 
   const handleOpenCreate = () => {
     setModalType("create");
-    setSelectedUser(null);
-    setUsernameInput("");
-    setPasswordInput("");
-    setRoleInput("student");
+    setSelectedStudent(null);
+    setNameInput("");
+    setClassInput("");
+    setHalaqahInput(halaqahs[0]?.id ?? "");
     setFormError(null);
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = (user: User) => {
+  const handleOpenEdit = (student: Student) => {
     setModalType("edit");
-    setSelectedUser(user);
-    setUsernameInput(user.username);
-    setPasswordInput("");
-    setRoleInput(user.role);
+    setSelectedStudent(student);
+    setNameInput(student.name);
+    setClassInput(student.class);
+    setHalaqahInput(student.halaqah_id);
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -82,20 +103,10 @@ export default function UserManagementPage() {
     setFormError(null);
     setSubmitLoading(true);
 
-    if (modalType === "create" && !passwordInput) {
-      setFormError("Password wajib diisi untuk pengguna baru.");
-      setSubmitLoading(false);
-      return;
-    }
-
     try {
-      const url = modalType === "create" ? "/api/users" : `/api/users/${selectedUser?.id}`;
+      const url = modalType === "create" ? "/api/students" : `/api/students/${selectedStudent?.id}`;
       const method = modalType === "create" ? "POST" : "PUT";
-      const payload = {
-        username: usernameInput,
-        role: roleInput,
-        ...(passwordInput ? { password: passwordInput } : {}),
-      };
+      const payload = { name: nameInput, class: classInput, halaqah_id: halaqahInput };
 
       const response = await fetch(url, {
         method,
@@ -107,9 +118,9 @@ export default function UserManagementPage() {
 
       setIsModalOpen(false);
       triggerSuccess(
-        modalType === "create" ? "Pengguna baru berhasil ditambahkan!" : "Pengguna berhasil diperbarui!"
+        modalType === "create" ? "Santri baru berhasil ditambahkan!" : "Data santri berhasil diperbarui!"
       );
-      fetchUsers();
+      fetchStudents();
     } catch (err: any) {
       setFormError(err.message);
     } finally {
@@ -117,41 +128,32 @@ export default function UserManagementPage() {
     }
   };
 
-  const handleDelete = async (user: User) => {
-    if (user.username === "admin") {
-      alert("Pengguna administrator utama tidak dapat dihapus!");
-      return;
-    }
-    if (!confirm(`Apakah Anda yakin ingin menghapus pengguna "${user.username}"?`)) return;
+  const handleDelete = async (student: Student) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus santri "${student.name}"?`)) return;
 
     try {
-      const response = await fetch(`/api/users/${user.id}`, { method: "DELETE" });
+      const response = await fetch(`/api/students/${student.id}`, { method: "DELETE" });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Gagal menghapus pengguna.");
-      triggerSuccess(`Pengguna "${user.username}" berhasil dihapus.`);
-      fetchUsers();
+      if (!response.ok) throw new Error(data.error || "Gagal menghapus santri.");
+      triggerSuccess(`Santri "${student.name}" berhasil dihapus.`);
+      fetchStudents();
     } catch (err: any) {
       alert(err.message);
     }
   };
 
-  const filteredUsers = users.filter((user) =>
-    user.username.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredStudents = students.filter(
+    (s) =>
+      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.class.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.halaqah_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const roleStyles = {
-    admin: "bg-blue-50 text-blue-600 border-blue-100",
-    ustadz: "bg-emerald-50 text-emerald-600 border-emerald-100",
-    student: "bg-slate-50 text-slate-600 border-slate-100",
-  };
-
-  const roleLabels = { admin: "Admin", ustadz: "Ustadz", student: "Santri" };
 
   return (
     <>
       <Header
-        title="Manajemen Pengguna"
-        subtitle="Kelola akun, kredensial, dan hak akses pengguna sistem"
+        title="Manajemen Santri"
+        subtitle="Kelola data santri, kelas, dan halaqah dalam sistem"
         showNewSession={false}
         showSearch={false}
       />
@@ -171,7 +173,7 @@ export default function UserManagementPage() {
             <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Cari pengguna berdasarkan username..."
+              placeholder="Cari berdasarkan nama, kelas, atau halaqah..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-sm bg-gray-50/50"
@@ -182,7 +184,7 @@ export default function UserManagementPage() {
             className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-semibold text-sm transition-all shadow-lg shadow-blue-500/10 flex items-center justify-center gap-2 cursor-pointer"
           >
             <FiUserPlus className="w-4 h-4" />
-            Tambah Pengguna
+            Tambah Santri
           </button>
         </div>
 
@@ -203,53 +205,53 @@ export default function UserManagementPage() {
             <thead>
               <tr className="border-b border-blue-50 text-left text-gray-400 font-medium">
                 <th className="py-4 px-2 text-xs uppercase tracking-wider">ID</th>
-                <th className="py-4 px-4 text-xs uppercase tracking-wider">Username</th>
-                <th className="py-4 px-4 text-xs uppercase tracking-wider">Hak Akses</th>
+                <th className="py-4 px-4 text-xs uppercase tracking-wider">Nama Santri</th>
+                <th className="py-4 px-4 text-xs uppercase tracking-wider">Kelas</th>
+                <th className="py-4 px-4 text-xs uppercase tracking-wider">Halaqah</th>
                 <th className="py-4 px-4 text-xs uppercase tracking-wider text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-blue-50/50">
               {loading ? (
-                Array.from({ length: 4 }).map((_, idx) => (
-                  <tr key={idx} className="animate-pulse">
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
                     <td className="py-4 px-2"><div className="h-4 bg-gray-100 rounded w-6" /></td>
-                    <td className="py-4 px-4"><div className="h-4 bg-gray-100 rounded w-32" /></td>
-                    <td className="py-4 px-4"><div className="h-6 bg-gray-100 rounded-full w-20" /></td>
+                    <td className="py-4 px-4"><div className="h-4 bg-gray-100 rounded w-40" /></td>
+                    <td className="py-4 px-4"><div className="h-4 bg-gray-100 rounded w-12" /></td>
+                    <td className="py-4 px-4"><div className="h-6 bg-gray-100 rounded-full w-28" /></td>
                     <td className="py-4 px-4 text-right"><div className="h-8 bg-gray-100 rounded-xl w-16 ml-auto" /></td>
                   </tr>
                 ))
-              ) : filteredUsers.length === 0 ? (
+              ) : filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-10 text-center text-gray-400">
-                    Tidak ada data pengguna ditemukan.
+                  <td colSpan={5} className="py-10 text-center text-gray-400">
+                    Tidak ada data santri ditemukan.
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-blue-50/20 transition-colors">
-                    <td className="py-4 px-2 font-medium text-gray-400">#{user.id}</td>
-                    <td className="py-4 px-4 font-semibold text-gray-700">{user.username}</td>
+                filteredStudents.map((student) => (
+                  <tr key={student.id} className="hover:bg-blue-50/20 transition-colors">
+                    <td className="py-4 px-2 font-medium text-gray-400">#{student.id}</td>
+                    <td className="py-4 px-4 font-semibold text-gray-700">{student.name}</td>
+                    <td className="py-4 px-4 text-gray-600">{student.class}</td>
                     <td className="py-4 px-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${roleStyles[user.role]}`}>
-                        {roleLabels[user.role]}
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold border bg-blue-50 text-blue-600 border-blue-100">
+                        {student.halaqah_name}
                       </span>
                     </td>
                     <td className="py-4 px-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button
-                          onClick={() => handleOpenEdit(user)}
+                          onClick={() => handleOpenEdit(student)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition cursor-pointer"
+                          title="Edit Santri"
                         >
                           <FiEdit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(user)}
-                          disabled={user.username === "admin"}
-                          className={`p-2 rounded-xl transition cursor-pointer ${
-                            user.username === "admin"
-                              ? "text-gray-300 cursor-not-allowed"
-                              : "text-red-500 hover:bg-red-50"
-                          }`}
+                          onClick={() => handleDelete(student)}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition cursor-pointer"
+                          title="Hapus Santri"
                         >
                           <FiTrash2 className="w-4 h-4" />
                         </button>
@@ -267,7 +269,7 @@ export default function UserManagementPage() {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={modalType === "create" ? "Tambah Pengguna Baru" : "Edit Pengguna"}
+        title={modalType === "create" ? "Tambah Santri Baru" : "Edit Data Santri"}
       >
         <form onSubmit={handleSubmit}>
           <div className="p-6 space-y-4">
@@ -280,48 +282,64 @@ export default function UserManagementPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Username
+                Nama Lengkap
               </label>
               <input
                 type="text"
                 required
-                value={usernameInput}
-                onChange={(e) => setUsernameInput(e.target.value)}
-                placeholder="Masukkan username"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="Masukkan nama lengkap santri"
                 className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-800 placeholder-gray-400"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Role / Hak Akses
-              </label>
-              <select
-                value={roleInput}
-                onChange={(e) => setRoleInput(e.target.value as any)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-700 bg-white"
-              >
-                <option value="student">Santri</option>
-                <option value="ustadz">Ustadz</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Password {modalType === "edit" && <span className="text-gray-400 normal-case">(Opsional)</span>}
+                Kelas
               </label>
               <input
-                type="password"
-                required={modalType === "create"}
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder={modalType === "create" ? "Masukkan password baru" : "Biarkan kosong jika tidak diubah"}
+                type="text"
+                required
+                value={classInput}
+                onChange={(e) => setClassInput(e.target.value)}
+                placeholder="Contoh: 7A, 8B, 9C"
                 className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-800 placeholder-gray-400"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                Halaqah
+              </label>
+              {halaqahs.length > 0 ? (
+                <select
+                  required
+                  value={halaqahInput}
+                  onChange={(e) => setHalaqahInput(Number(e.target.value))}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-700 bg-white"
+                >
+                  <option value="">-- Pilih Halaqah --</option>
+                  {halaqahs.map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="number"
+                  required
+                  value={halaqahInput}
+                  onChange={(e) => setHalaqahInput(Number(e.target.value))}
+                  placeholder="ID Halaqah"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-800 placeholder-gray-400"
+                />
+              )}
             </div>
           </div>
 
+          {/* Footer */}
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 rounded-b-3xl flex justify-end gap-3">
             <button
               type="button"
@@ -333,9 +351,9 @@ export default function UserManagementPage() {
             <button
               type="submit"
               disabled={submitLoading}
-              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-blue-500/10 cursor-pointer"
+              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-blue-500/10 flex items-center gap-2 cursor-pointer"
             >
-              {submitLoading ? "Memproses..." : "Simpan Perubahan"}
+              {submitLoading ? "Memproses..." : "Simpan"}
             </button>
           </div>
         </form>
