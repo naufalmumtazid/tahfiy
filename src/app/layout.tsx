@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
+import logoImg from "@/assets/logo.png";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -7,8 +8,13 @@ const poppins = Poppins({
   subsets: ["latin"],
 });
 export const metadata: Metadata = {
-  title: "Tahfiy",
+  title: "Tahfiy - Tahfidz Digital System",
   description: "Tahfiy Digital System",
+  icons: {
+    icon: [{ url: logoImg.src, type: "image/png" }],
+    shortcut: logoImg.src,
+    apple: logoImg.src,
+  },
 };
 
 export default function RootLayout({

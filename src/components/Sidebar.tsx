@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { FiBookOpen, FiLogOut, FiUsers } from "react-icons/fi";
-import { MdDashboard, MdPeople, MdAnalytics, MdSchool } from "react-icons/md";
+import { MdDashboard, MdPeople, MdOutlineNotes } from "react-icons/md";
 import { getCurrentUser, logoutAction, type AuthUser } from "@/actions/auth";
 import logoImg from "@/assets/logo.png";
 
@@ -18,9 +18,9 @@ const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: MdDashboard, href: "/admin" },
     { id: "ziyadah", label: "Ziyadah", icon: FiBookOpen, href: "/admin/quran/ziyadah" },
     { id: "murojaah", label: "Murojaah", icon: FiBookOpen, href: "/admin/quran/murojaah" },
-    { id: "halaqah", label: "Halaqah", icon: MdAnalytics, href: "/admin/halaqah" },
+    { id: "halaqah", label: "Halaqah", icon: MdOutlineNotes, href: "/admin/halaqah" },
     { id: "students", label: "Santri", icon: MdPeople, href: "/admin/students" },
-    { id: "teachers", label: "Ustadz", icon: MdSchool, href: "/admin/teachers" },
+    { id: "teachers", label: "Ustadz", icon: MdPeople, href: "/admin/teachers" },
     { id: "users", label: "Users", icon: FiUsers, href: "/admin/users" },
 ];
 
