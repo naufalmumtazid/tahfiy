@@ -10,7 +10,7 @@ const COOKIE_NAME = "auth_token";
 export interface AuthUser {
   userId: number;
   username: string;
-  role: "admin" | "ustadz" | "student";
+  role: "admin" | "ustadz" | "santri";
 }
 
 export async function loginAction(prevState: any, formData: FormData) {

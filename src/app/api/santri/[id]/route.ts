@@ -15,14 +15,13 @@ async function checkIsAdmin(): Promise<boolean> {
   }
 }
 
-// PUT /api/students/[id] - Update student (Admin only)
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const studentId = parseInt(id, 10);
+    const santriId = parseInt(id, 10);
 
     const isAdmin = await checkIsAdmin();
     if (!isAdmin) {
@@ -42,24 +41,47 @@ export async function PUT(
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    const { data: updatedStudent, error } = await supabase
-      .from("students")
-      .update({ name, class: className, halaqah_id: parseInt(halaqah_id, 10) })
-      .eq("id", studentId)
-      .select("id, name, class, halaqah_id, halaqah(name)")
+    const { data: existingSantri, error: existingError } = await supabase
+      .from("santri")
+      .select("user_id")
+      .eq("id", santriId)
       .single();
 
-    if (error) throw error;
+    if (existingError || !existingSantri) {
+      return NextResponse.json({ error: "Santri tidak ditemukan." }, { status: 404 });
+    }
 
-    const formattedStudent = {
-      id: updatedStudent.id,
-      name: updatedStudent.name,
-      class: updatedStudent.class,
-      halaqah_id: updatedStudent.halaqah_id,
-      halaqah_name: updatedStudent.halaqah ? (updatedStudent.halaqah as any).name : "N/A",
+    const { error: userError } = await supabase
+      .from("users")
+      .update({ name })
+      .eq("id", existingSantri.user_id);
+
+    if (userError) throw userError;
+
+    const { data: updatedSantri, error: santriError } = await supabase
+      .from("santri")
+      .update({
+        class: className,
+        halaqah_id: parseInt(halaqah_id, 10),
+      })
+      .eq("id", santriId)
+      .select("id, user_id, class, halaqah_id, halaqah(name), users(name)")
+      .single();
+
+    if (santriError || !updatedSantri) {
+      throw santriError || new Error("Failed to update santri.");
+    }
+
+    const formattedSantri = {
+      id: updatedSantri.id,
+      user_id: updatedSantri.user_id,
+      name: updatedSantri.users?.name || "",
+      class: updatedSantri.class,
+      halaqah_id: updatedSantri.halaqah_id,
+      halaqah_name: updatedSantri.halaqah ? updatedSantri.halaqah.name : "N/A",
     };
 
-    return NextResponse.json({ student: formattedStudent });
+    return NextResponse.json({ santri: formattedSantri });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "An error occurred" },
@@ -68,14 +90,13 @@ export async function PUT(
   }
 }
 
-// DELETE /api/students/[id] - Delete student (Admin only)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const studentId = parseInt(id, 10);
+    const santriId = parseInt(id, 10);
 
     const isAdmin = await checkIsAdmin();
     if (!isAdmin) {
@@ -85,11 +106,21 @@ export async function DELETE(
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    const { error } = await supabase.from("students").delete().eq("id", studentId);
+    const { data: existingSantri, error: existingError } = await supabase
+      .from("santri")
+      .select("user_id")
+      .eq("id", santriId)
+      .single();
+
+    if (existingError || !existingSantri) {
+      return NextResponse.json({ error: "Santri tidak ditemukan." }, { status: 404 });
+    }
+
+    const { error } = await supabase.from("users").delete().eq("id", existingSantri.user_id);
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, message: "Student deleted successfully" });
+    return NextResponse.json({ success: true, message: "Santri deleted successfully" });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "An error occurred" },

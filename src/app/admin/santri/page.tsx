@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FiUserPlus, FiEdit2, FiTrash2, FiSearch, FiAlertCircle, FiCheckCircle } from "react-icons/fi";
+import { FiUserPlus, FiEdit2, FiTrash2, FiSearch, FiAlertCircle } from "react-icons/fi";
+import { toast } from "react-toastify";
 import Header from "@/components/Header";
 import Modal from "@/components/Modal";
 
@@ -10,7 +11,7 @@ interface Halaqah {
   name: string;
 }
 
-interface Student {
+interface Santri {
   id: number;
   name: string;
   class: string;
@@ -18,18 +19,17 @@ interface Student {
   halaqah_name: string;
 }
 
-export default function StudentsPage() {
-  const [students, setStudents] = useState<Student[]>([]);
+export default function SantriPage() {
+  const [santri, setSantri] = useState<Santri[]>([]);
   const [halaqahs, setHalaqahs] = useState<Halaqah[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit">("create");
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedSantri, setSelectedSantri] = useState<Santri | null>(null);
 
   // Form State
   const [nameInput, setNameInput] = useState("");
@@ -38,16 +38,16 @@ export default function StudentsPage() {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const fetchStudents = async () => {
+  const fetchSantri = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/students");
+      const response = await fetch("/api/santri");
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || "Gagal memuat daftar santri.");
       }
       const data = await response.json();
-      setStudents(data.students || []);
+      setSantri(data.santri || []);
       setApiError(null);
     } catch (err: any) {
       setApiError(err.message);
@@ -69,18 +69,13 @@ export default function StudentsPage() {
   };
 
   useEffect(() => {
-    fetchStudents();
+    fetchSantri();
     fetchHalaqahs();
   }, []);
 
-  const triggerSuccess = (message: string) => {
-    setSuccessMessage(message);
-    setTimeout(() => setSuccessMessage(null), 4000);
-  };
-
   const handleOpenCreate = () => {
     setModalType("create");
-    setSelectedStudent(null);
+    setSelectedSantri(null);
     setNameInput("");
     setClassInput("");
     setHalaqahInput(halaqahs[0]?.id ?? "");
@@ -88,12 +83,12 @@ export default function StudentsPage() {
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = (student: Student) => {
+  const handleOpenEdit = (santri: Santri) => {
     setModalType("edit");
-    setSelectedStudent(student);
-    setNameInput(student.name);
-    setClassInput(student.class);
-    setHalaqahInput(student.halaqah_id);
+    setSelectedSantri(santri);
+    setNameInput(santri.name);
+    setClassInput(santri.class);
+    setHalaqahInput(santri.halaqah_id);
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -104,7 +99,7 @@ export default function StudentsPage() {
     setSubmitLoading(true);
 
     try {
-      const url = modalType === "create" ? "/api/students" : `/api/students/${selectedStudent?.id}`;
+      const url = modalType === "create" ? "/api/santri" : `/api/santri/${selectedSantri?.id}`;
       const method = modalType === "create" ? "POST" : "PUT";
       const payload = { name: nameInput, class: classInput, halaqah_id: halaqahInput };
 
@@ -117,10 +112,10 @@ export default function StudentsPage() {
       if (!response.ok) throw new Error(data.error || "Gagal memproses data.");
 
       setIsModalOpen(false);
-      triggerSuccess(
+      toast.success(
         modalType === "create" ? "Santri baru berhasil ditambahkan!" : "Data santri berhasil diperbarui!"
       );
-      fetchStudents();
+      fetchSantri();
     } catch (err: any) {
       setFormError(err.message);
     } finally {
@@ -128,21 +123,21 @@ export default function StudentsPage() {
     }
   };
 
-  const handleDelete = async (student: Student) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus santri "${student.name}"?`)) return;
+  const handleDelete = async (santri: Santri) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus santri "${santri.name}"?`)) return;
 
     try {
-      const response = await fetch(`/api/students/${student.id}`, { method: "DELETE" });
+      const response = await fetch(`/api/santri/${santri.id}`, { method: "DELETE" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Gagal menghapus santri.");
-      triggerSuccess(`Santri "${student.name}" berhasil dihapus.`);
-      fetchStudents();
+      toast.success(`Santri "${santri.name}" berhasil dihapus.`);
+      fetchSantri();
     } catch (err: any) {
-      alert(err.message);
+      toast.error(err.message);
     }
   };
 
-  const filteredStudents = students.filter(
+  const filteredSantri = santri.filter(
     (s) =>
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.class.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -157,14 +152,6 @@ export default function StudentsPage() {
         showNewSession={false}
         showSearch={false}
       />
-
-      {/* Success Toast */}
-      {successMessage && (
-        <div className="fixed top-6 right-6 bg-white border border-blue-100 text-blue-800 px-5 py-4 rounded-2xl shadow-xl flex items-center gap-3 z-[100]">
-          <FiCheckCircle className="w-5 h-5 text-blue-500" />
-          <span className="text-sm font-semibold">{successMessage}</span>
-        </div>
-      )}
 
       <div className="bg-white rounded-3xl border border-blue-100 shadow-sm p-6 overflow-hidden">
         {/* Controls */}
@@ -191,7 +178,7 @@ export default function StudentsPage() {
         {/* API Error */}
         {apiError && (
           <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-2xl flex items-start gap-3 text-red-700 text-sm">
-            <FiAlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <FiAlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
             <div>
               <p className="font-semibold">Gagal memuat data</p>
               <p className="mt-0.5">{apiError}</p>
@@ -222,34 +209,34 @@ export default function StudentsPage() {
                     <td className="py-4 px-4 text-right"><div className="h-8 bg-gray-100 rounded-xl w-16 ml-auto" /></td>
                   </tr>
                 ))
-              ) : filteredStudents.length === 0 ? (
+              ) : filteredSantri.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-10 text-center text-gray-400">
                     Tidak ada data santri ditemukan.
                   </td>
                 </tr>
               ) : (
-                filteredStudents.map((student) => (
-                  <tr key={student.id} className="hover:bg-blue-50/20 transition-colors">
-                    <td className="py-4 px-2 font-medium text-gray-400">#{student.id}</td>
-                    <td className="py-4 px-4 font-semibold text-gray-700">{student.name}</td>
-                    <td className="py-4 px-4 text-gray-600">{student.class}</td>
+                filteredSantri.map((santri) => (
+                  <tr key={santri.id} className="hover:bg-blue-50/20 transition-colors">
+                    <td className="py-4 px-2 font-medium text-gray-400">#{santri.id}</td>
+                    <td className="py-4 px-4 font-semibold text-gray-700">{santri.name}</td>
+                    <td className="py-4 px-4 text-gray-600">{santri.class}</td>
                     <td className="py-4 px-4">
                       <span className="px-3 py-1 rounded-full text-xs font-semibold border bg-blue-50 text-blue-600 border-blue-100">
-                        {student.halaqah_name}
+                        {santri.halaqah_name}
                       </span>
                     </td>
                     <td className="py-4 px-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button
-                          onClick={() => handleOpenEdit(student)}
+                          onClick={() => handleOpenEdit(santri)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition cursor-pointer"
                           title="Edit Santri"
                         >
                           <FiEdit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(student)}
+                          onClick={() => handleDelete(santri)}
                           className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition cursor-pointer"
                           title="Hapus Santri"
                         >
@@ -275,7 +262,7 @@ export default function StudentsPage() {
           <div className="p-6 space-y-4">
             {formError && (
               <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded-xl flex items-start gap-3 text-red-700 text-xs">
-                <FiAlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <FiAlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <p className="font-medium">{formError}</p>
               </div>
             )}

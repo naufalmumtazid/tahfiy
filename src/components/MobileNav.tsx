@@ -12,7 +12,7 @@ interface MobileNavProps {
 const navItems = [
   { id: "dashboard", label: "Home", icon: FiHome, href: "/admin" },
   { id: "quran", label: "Quran", icon: FiBookOpen, href: "/admin/quran" },
-  { id: "students", label: "Students", icon: FiUsers, href: "/admin/students" },
+  { id: "santri", label: "Santri", icon: FiUsers, href: "/admin/santri" },
   { id: "progress", label: "Progress", icon: FiBarChart2, href: "/admin/progress" },
 ];
 

@@ -15,7 +15,6 @@ async function checkIsAdmin(): Promise<boolean> {
   }
 }
 
-// PUT /api/halaqah/[id] - Update halaqah (Admin only)
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -34,7 +33,7 @@ export async function PUT(
 
     if (!name || !ustadz_id) {
       return NextResponse.json(
-        { error: "Nama halaqah dan teacher wajib diisi." },
+        { error: "Nama halaqah dan ustadz wajib diisi." },
         { status: 400 }
       );
     }
@@ -46,18 +45,17 @@ export async function PUT(
       .from("halaqah")
       .update({ name, ustadz_id: parseInt(ustadz_id, 10) })
       .eq("id", halaqahId)
-      .select("id, name, ustadz_id, ustadz(name)")
+      .select("id, name, ustadz_id, ustadz(user_id, users(name))")
       .single();
 
-    if (error) throw error;
+    if (error || !updated) throw error || new Error("Failed to update halaqah.");
 
     return NextResponse.json({
       halaqah: {
         id: updated.id,
         name: updated.name,
         ustadz_id: updated.ustadz_id,
-        ustadz_name: updated.ustadz ? (updated.ustadz as any).name : "N/A",
-        teacher_name: updated.ustadz ? (updated.ustadz as any).name : "N/A",
+        ustadz_name: updated.ustadz?.[0]?.users?.[0]?.name || "N/A",
       },
     });
   } catch (error: any) {
@@ -65,7 +63,6 @@ export async function PUT(
   }
 }
 
-// DELETE /api/halaqah/[id] - Delete halaqah (Admin only)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

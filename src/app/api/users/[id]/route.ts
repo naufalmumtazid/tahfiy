@@ -4,7 +4,6 @@ import { createClient } from "@/database/supabase/server";
 import { verifyJWT } from "@/utils/jwt";
 import bcrypt from "bcryptjs";
 
-// Helper to check if the current requester is an admin
 async function checkIsAdmin(): Promise<boolean> {
   try {
     const cookieStore = await cookies();
@@ -17,7 +16,6 @@ async function checkIsAdmin(): Promise<boolean> {
   }
 }
 
-// PUT /api/users/[id] - Update user (Admin only)
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -32,11 +30,11 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { username, password, role } = body;
+    const { username, password, role, name } = body;
 
-    if (!username || !role) {
+    if (!username || !role || !name) {
       return NextResponse.json(
-        { error: "Username and role are required" },
+        { error: "Username, name, and role are required" },
         { status: 400 }
       );
     }
@@ -44,7 +42,6 @@ export async function PUT(
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    // Check if new username conflicts with another user
     const { data: conflictingUser } = await supabase
       .from("users")
       .select("id")
@@ -62,9 +59,9 @@ export async function PUT(
     const updateData: any = {
       username,
       role,
+      name,
     };
 
-    // If password is provided, hash it and update it
     if (password && password.trim() !== "") {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
@@ -75,7 +72,7 @@ export async function PUT(
       .from("users")
       .update(updateData)
       .eq("id", userId)
-      .select("id, username, role")
+      .select("id, username, role, name")
       .single();
 
     if (error) throw error;
@@ -89,7 +86,6 @@ export async function PUT(
   }
 }
 
-// DELETE /api/users/[id] - Delete user (Admin only)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

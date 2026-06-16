@@ -11,9 +11,9 @@ interface HeaderProps {
 
 export default function Header({
     title = "Welcome back",
-    subtitle = "Track your students' Quran memorization progress",
-    showNewSession = true,
-    showSearch = true
+    subtitle = "Selamat datang di Tahfiy!",
+    showNewSession = false,
+    showSearch = false
 }: HeaderProps) {
     return (
         <div className="mb-8">

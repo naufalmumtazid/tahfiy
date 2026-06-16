@@ -2,8 +2,18 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/database/supabase/server";
 import { verifyJWT } from "@/utils/jwt";
+import bcrypt from "bcryptjs";
 
-// Helper to check if the current requester is an admin
+function generateUsername(name: string) {
+  return (
+    name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+  );
+}
+
 async function checkIsAdmin(): Promise<boolean> {
   try {
     const cookieStore = await cookies();
@@ -16,7 +26,6 @@ async function checkIsAdmin(): Promise<boolean> {
   }
 }
 
-// GET /api/students - Retrieve all students (Admin/Ustadz can read, but let's require admin for management)
 export async function GET() {
   try {
     const isAdmin = await checkIsAdmin();
@@ -27,24 +36,23 @@ export async function GET() {
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    // Retrieve students joining halaqah details
-    const { data: studentsData, error } = await supabase
-      .from("students")
-      .select("id, name, class, halaqah_id, halaqah(name)")
+    const { data: santriData, error } = await supabase
+      .from("santri")
+      .select("id, user_id, class, halaqah_id, halaqah(name), users(name)")
       .order("id", { ascending: true });
 
     if (error) throw error;
 
-    // Format output
-    const students = (studentsData || []).map((s: any) => ({
+    const santri = (santriData || []).map((s: any) => ({
       id: s.id,
-      name: s.name,
+      user_id: s.user_id,
+      name: s.users?.name || "",
       class: s.class,
       halaqah_id: s.halaqah_id,
       halaqah_name: s.halaqah ? s.halaqah.name : "N/A",
     }));
 
-    return NextResponse.json({ students });
+    return NextResponse.json({ santri });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "An error occurred" },
@@ -53,7 +61,6 @@ export async function GET() {
   }
 }
 
-// POST /api/students - Create a new student (Admin only)
 export async function POST(request: Request) {
   try {
     const isAdmin = await checkIsAdmin();
@@ -74,30 +81,55 @@ export async function POST(request: Request) {
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    // Insert student
-    const { data: newStudent, error } = await supabase
-      .from("students")
+    const username = generateUsername(name);
+    const password = "santri";
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const { data: newUser, error: userError } = await supabase
+      .from("users")
       .insert([
         {
+          username,
+          password: hashedPassword,
+          role: "santri",
           name,
+        },
+      ])
+      .select("id")
+      .single();
+
+    if (userError || !newUser) {
+      throw userError || new Error("Failed to create user for santri.");
+    }
+
+    const { data: newSantri, error: santriError } = await supabase
+      .from("santri")
+      .insert([
+        {
+          user_id: newUser.id,
           class: className,
           halaqah_id: parseInt(halaqah_id, 10),
         },
       ])
-      .select("id, name, class, halaqah_id, halaqah(name)")
+      .select("id, user_id, class, halaqah_id, halaqah(name), users(name)")
       .single();
 
-    if (error) throw error;
+    if (santriError || !newSantri) {
+      await supabase.from("users").delete().eq("id", newUser.id);
+      throw santriError || new Error("Failed to create santri entry.");
+    }
 
-    const formattedStudent = {
-      id: newStudent.id,
-      name: newStudent.name,
-      class: newStudent.class,
-      halaqah_id: newStudent.halaqah_id,
-      halaqah_name: newStudent.halaqah ? (newStudent.halaqah as any).name : "N/A",
+    const formattedSantri = {
+      id: newSantri.id,
+      user_id: newSantri.user_id,
+      name: (newSantri.users as any)?.name || "",
+      class: newSantri.class,
+      halaqah_id: newSantri.halaqah_id,
+      halaqah_name: newSantri.halaqah ? (newSantri.halaqah as any).name : "N/A",
     };
 
-    return NextResponse.json({ student: formattedStudent }, { status: 201 });
+    return NextResponse.json({ santri: formattedSantri }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "An error occurred" },

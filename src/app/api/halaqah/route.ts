@@ -15,7 +15,6 @@ async function checkIsAdmin(): Promise<boolean> {
   }
 }
 
-// GET /api/halaqah - Fetch all halaqah with teacher name
 export async function GET() {
   try {
     const isAdmin = await checkIsAdmin();
@@ -28,7 +27,7 @@ export async function GET() {
 
     const { data, error } = await supabase
       .from("halaqah")
-      .select("id, name, ustadz_id, ustadz(name)")
+      .select("id, name, ustadz_id, ustadz(user_id, users(name))")
       .order("id", { ascending: true });
 
     if (error) throw error;
@@ -37,9 +36,9 @@ export async function GET() {
       id: h.id,
       name: h.name,
       ustadz_id: h.ustadz_id,
-      ustadz_name: h.ustadz ? h.ustadz.name : "N/A",
-      teacher_name: h.ustadz ? h.ustadz.name : "N/A",
+      ustadz_name: h.ustadz?.users?.name || "N/A",
     }));
+
 
     return NextResponse.json({ halaqahs });
   } catch (error: any) {
@@ -47,7 +46,6 @@ export async function GET() {
   }
 }
 
-// POST /api/halaqah - Create a new halaqah (Admin only)
 export async function POST(request: Request) {
   try {
     const isAdmin = await checkIsAdmin();
@@ -60,7 +58,7 @@ export async function POST(request: Request) {
 
     if (!name || !ustadz_id) {
       return NextResponse.json(
-        { error: "Nama halaqah dan teacher wajib diisi." },
+        { error: "Nama halaqah dan ustadz wajib diisi." },
         { status: 400 }
       );
     }
@@ -71,7 +69,7 @@ export async function POST(request: Request) {
     const { data: newHalaqah, error } = await supabase
       .from("halaqah")
       .insert([{ name, ustadz_id: parseInt(ustadz_id, 10) }])
-      .select("id, name, ustadz_id, ustadz(name)")
+      .select("id, name, ustadz_id, ustadz(user_id, users(name))")
       .single();
 
     if (error) throw error;
@@ -82,8 +80,7 @@ export async function POST(request: Request) {
           id: newHalaqah.id,
           name: newHalaqah.name,
           ustadz_id: newHalaqah.ustadz_id,
-          ustadz_name: newHalaqah.ustadz ? (newHalaqah.ustadz as any).name : "N/A",
-          teacher_name: newHalaqah.ustadz ? (newHalaqah.ustadz as any).name : "N/A",
+          ustadz_name: newHalaqah.ustadz?.[0]?.users?.[0]?.name || "N/A",
         },
       },
       { status: 201 }

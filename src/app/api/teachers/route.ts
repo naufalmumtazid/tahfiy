@@ -16,7 +16,7 @@ async function checkIsAdmin(): Promise<boolean> {
   }
 }
 
-// GET /api/teachers - Fetch all teachers
+// GET /api/ustadz - Fetch all ustadz
 export async function GET() {
   try {
     const isAdmin = await checkIsAdmin();
@@ -34,7 +34,7 @@ export async function GET() {
 
     if (error) throw error;
 
-    return NextResponse.json({ teachers: data || [] });
+    return NextResponse.json({ ustadz: data || [] });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "An error occurred" },
@@ -43,7 +43,7 @@ export async function GET() {
   }
 }
 
-// POST /api/teachers - Create a new teacher (Admin only)
+// POST /api/ustadz - Create a new ustadz (Admin only)
 export async function POST(request: Request) {
   try {
     const isAdmin = await checkIsAdmin();
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 
     if (!name) {
       return NextResponse.json(
-        { error: "Nama teacher wajib diisi." },
+        { error: "Nama ustadz wajib diisi." },
         { status: 400 }
       );
     }
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    const { data: newTeacher, error } = await supabase
+    const { data: newUstadz, error } = await supabase
       .from("ustadz")
       .insert([{ name }])
       .select("id, name")
@@ -74,9 +74,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        teacher: {
-          id: newTeacher.id,
-          name: newTeacher.name,
+        ustadz: {
+          id: newUstadz.id,
+          name: newUstadz.name,
         },
       },
       { status: 201 }

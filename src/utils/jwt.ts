@@ -7,7 +7,7 @@ const JWT_SECRET = new TextEncoder().encode(
 export async function signJWT(payload: {
   userId: number;
   username: string;
-  role: "admin" | "ustadz" | "student";
+  role: "admin" | "ustadz" | "santri";
 }) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
@@ -22,7 +22,7 @@ export async function verifyJWT(token: string) {
     return payload as {
       userId: number;
       username: string;
-      role: "admin" | "ustadz" | "student";
+      role: "admin" | "ustadz" | "santri";
       iat: number;
       exp: number;
     };

@@ -4,7 +4,6 @@ import { createClient } from "@/database/supabase/server";
 import { verifyJWT } from "@/utils/jwt";
 import bcrypt from "bcryptjs";
 
-// Helper to check if the current requester is an admin
 async function checkIsAdmin(): Promise<boolean> {
   try {
     const cookieStore = await cookies();
@@ -17,7 +16,6 @@ async function checkIsAdmin(): Promise<boolean> {
   }
 }
 
-// GET /api/users - Get user by username OR get all users (Admin only)
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -26,11 +24,10 @@ export async function GET(request: Request) {
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    // If username is provided, query that specific user (used in login)
     if (username) {
       const { data: user, error } = await supabase
         .from("users")
-        .select("*")
+        .select("id, username, password, role, name")
         .eq("username", username)
         .single();
 
@@ -41,7 +38,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ user });
     }
 
-    // Otherwise, retrieve all users (Requires Admin authorization)
     const isAdmin = await checkIsAdmin();
     if (!isAdmin) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
@@ -49,7 +45,7 @@ export async function GET(request: Request) {
 
     const { data: users, error } = await supabase
       .from("users")
-      .select("id, username, role")
+      .select("id, username, role, name")
       .order("id", { ascending: true });
 
     if (error) throw error;
@@ -63,7 +59,6 @@ export async function GET(request: Request) {
   }
 }
 
-// POST /api/users - Create a new user (Admin only)
 export async function POST(request: Request) {
   try {
     const isAdmin = await checkIsAdmin();
@@ -72,11 +67,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { username, password, role } = body;
+    const { username, password, role, name } = body;
 
-    if (!username || !password || !role) {
+    if (!username || !password || !role || !name) {
       return NextResponse.json(
-        { error: "Username, password, and role are required" },
+        { error: "Username, password, name, and role are required" },
         { status: 400 }
       );
     }
@@ -84,7 +79,6 @@ export async function POST(request: Request) {
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    // Check if user already exists
     const { data: existingUser } = await supabase
       .from("users")
       .select("id")
@@ -98,21 +92,20 @@ export async function POST(request: Request) {
       );
     }
 
-    // Hash the password using bcryptjs
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Insert user into database
     const { data: newUser, error } = await supabase
       .from("users")
       .insert([
         {
           username,
           password: hashedPassword,
-          role: role,
+          role,
+          name,
         },
       ])
-      .select("id, username, role")
+      .select("id, username, role, name")
       .single();
 
     if (error) throw error;

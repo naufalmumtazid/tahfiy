@@ -15,14 +15,13 @@ async function checkIsAdmin(): Promise<boolean> {
   }
 }
 
-// PUT /api/teachers/[id] - Update teacher (Admin only)
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const teacherId = parseInt(id, 10);
+    const ustadzId = parseInt(id, 10);
 
     const isAdmin = await checkIsAdmin();
     if (!isAdmin) {
@@ -30,11 +29,11 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name } = body;
+    const { name, specialization, phone } = body;
 
     if (!name) {
       return NextResponse.json(
-        { error: "Nama teacher wajib diisi." },
+        { error: "Nama ustadz wajib diisi." },
         { status: 400 }
       );
     }
@@ -42,19 +41,44 @@ export async function PUT(
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    const { data: updatedTeacher, error } = await supabase
+    const { data: existingUstadz, error: existingError } = await supabase
       .from("ustadz")
-      .update({ name })
-      .eq("id", teacherId)
-      .select("id, name")
+      .select("user_id")
+      .eq("id", ustadzId)
       .single();
 
-    if (error) throw error;
+    if (existingError || !existingUstadz) {
+      return NextResponse.json({ error: "Ustadz tidak ditemukan." }, { status: 404 });
+    }
+
+    const { error: userError } = await supabase
+      .from("users")
+      .update({ name })
+      .eq("id", existingUstadz.user_id);
+
+    if (userError) throw userError;
+
+    const { data: updatedUstadz, error: ustadzError } = await supabase
+      .from("ustadz")
+      .update({
+        specialization: specialization || null,
+        phone: phone || null,
+      })
+      .eq("id", ustadzId)
+      .select("id, user_id, specialization, phone")
+      .single();
+
+    if (ustadzError || !updatedUstadz) {
+      throw ustadzError || new Error("Failed to update ustadz.");
+    }
 
     return NextResponse.json({
-      teacher: {
-        id: updatedTeacher.id,
-        name: updatedTeacher.name,
+      ustadz: {
+        id: updatedUstadz.id,
+        user_id: updatedUstadz.user_id,
+        name,
+        specialization: updatedUstadz.specialization || "",
+        phone: updatedUstadz.phone || "",
       },
     });
   } catch (error: any) {
@@ -65,14 +89,13 @@ export async function PUT(
   }
 }
 
-// DELETE /api/teachers/[id] - Delete teacher (Admin only)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const teacherId = parseInt(id, 10);
+    const ustadzId = parseInt(id, 10);
 
     const isAdmin = await checkIsAdmin();
     if (!isAdmin) {
@@ -82,11 +105,21 @@ export async function DELETE(
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    const { error } = await supabase.from("ustadz").delete().eq("id", teacherId);
+    const { data: existingUstadz, error: existingError } = await supabase
+      .from("ustadz")
+      .select("user_id")
+      .eq("id", ustadzId)
+      .single();
+
+    if (existingError || !existingUstadz) {
+      return NextResponse.json({ error: "Ustadz tidak ditemukan." }, { status: 404 });
+    }
+
+    const { error } = await supabase.from("users").delete().eq("id", existingUstadz.user_id);
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, message: "Teacher deleted successfully" });
+    return NextResponse.json({ success: true, message: "Ustadz deleted successfully" });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "An error occurred" },

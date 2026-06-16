@@ -1,14 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FiUserPlus, FiEdit2, FiTrash2, FiSearch, FiAlertCircle, FiCheckCircle } from "react-icons/fi";
+import { FiUserPlus, FiEdit2, FiTrash2, FiSearch, FiAlertCircle } from "react-icons/fi";
+import { toast } from "react-toastify";
 import Header from "@/components/Header";
 import Modal from "@/components/Modal";
 
 interface User {
   id: number;
   username: string;
-  role: "admin" | "ustadz" | "student";
+  name: string;
+  role: "admin" | "ustadz" | "santri";
 }
 
 export default function UserManagementPage() {
@@ -16,7 +18,6 @@ export default function UserManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,8 +26,9 @@ export default function UserManagementPage() {
 
   // Form State
   const [usernameInput, setUsernameInput] = useState("");
+  const [nameInput, setNameInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
-  const [roleInput, setRoleInput] = useState<"admin" | "ustadz" | "student">("student");
+  const [roleInput, setRoleInput] = useState<"admin" | "ustadz" | "santri">("santri");
   const [submitLoading, setSubmitLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -52,17 +54,13 @@ export default function UserManagementPage() {
     fetchUsers();
   }, []);
 
-  const triggerSuccess = (message: string) => {
-    setSuccessMessage(message);
-    setTimeout(() => setSuccessMessage(null), 4000);
-  };
-
   const handleOpenCreate = () => {
     setModalType("create");
     setSelectedUser(null);
     setUsernameInput("");
+    setNameInput("");
     setPasswordInput("");
-    setRoleInput("student");
+    setRoleInput("santri");
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -71,6 +69,7 @@ export default function UserManagementPage() {
     setModalType("edit");
     setSelectedUser(user);
     setUsernameInput(user.username);
+    setNameInput(user.name);
     setPasswordInput("");
     setRoleInput(user.role);
     setFormError(null);
@@ -93,6 +92,7 @@ export default function UserManagementPage() {
       const method = modalType === "create" ? "POST" : "PUT";
       const payload = {
         username: usernameInput,
+        name: nameInput,
         role: roleInput,
         ...(passwordInput ? { password: passwordInput } : {}),
       };
@@ -106,11 +106,12 @@ export default function UserManagementPage() {
       if (!response.ok) throw new Error(data.error || "Gagal memproses data.");
 
       setIsModalOpen(false);
-      triggerSuccess(
+      toast.success(
         modalType === "create" ? "Pengguna baru berhasil ditambahkan!" : "Pengguna berhasil diperbarui!"
       );
       fetchUsers();
     } catch (err: any) {
+      toast.error(err.message);
       setFormError(err.message);
     } finally {
       setSubmitLoading(false);
@@ -119,7 +120,7 @@ export default function UserManagementPage() {
 
   const handleDelete = async (user: User) => {
     if (user.username === "admin") {
-      alert("Pengguna administrator utama tidak dapat dihapus!");
+      toast.error("Pengguna administrator utama tidak dapat dihapus!");
       return;
     }
     if (!confirm(`Apakah Anda yakin ingin menghapus pengguna "${user.username}"?`)) return;
@@ -128,24 +129,25 @@ export default function UserManagementPage() {
       const response = await fetch(`/api/users/${user.id}`, { method: "DELETE" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Gagal menghapus pengguna.");
-      triggerSuccess(`Pengguna "${user.username}" berhasil dihapus.`);
+      toast.success(`Pengguna "${user.username}" berhasil dihapus.`);
       fetchUsers();
     } catch (err: any) {
-      alert(err.message);
+      toast.error(err.message);
     }
   };
 
   const filteredUsers = users.filter((user) =>
-    user.username.toLowerCase().includes(searchQuery.toLowerCase())
+    user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const roleStyles = {
     admin: "bg-blue-50 text-blue-600 border-blue-100",
     ustadz: "bg-emerald-50 text-emerald-600 border-emerald-100",
-    student: "bg-slate-50 text-slate-600 border-slate-100",
+    santri: "bg-slate-50 text-slate-600 border-slate-100",
   };
 
-  const roleLabels = { admin: "Admin", ustadz: "Teacher", student: "Santri" };
+  const roleLabels = { admin: "Admin", ustadz: "Ustadz", santri: "Santri" };
 
   return (
     <>
@@ -155,14 +157,6 @@ export default function UserManagementPage() {
         showNewSession={false}
         showSearch={false}
       />
-
-      {/* Success Toast */}
-      {successMessage && (
-        <div className="fixed top-6 right-6 bg-white border border-blue-100 text-blue-800 px-5 py-4 rounded-2xl shadow-xl flex items-center gap-3 z-[100]">
-          <FiCheckCircle className="w-5 h-5 text-blue-500" />
-          <span className="text-sm font-semibold">{successMessage}</span>
-        </div>
-      )}
 
       <div className="bg-white rounded-3xl border border-blue-100 shadow-sm p-6 overflow-hidden">
         {/* Controls */}
@@ -189,7 +183,7 @@ export default function UserManagementPage() {
         {/* API Error */}
         {apiError && (
           <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-2xl flex items-start gap-3 text-red-700 text-sm">
-            <FiAlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <FiAlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
             <div>
               <p className="font-semibold">Gagal memuat data</p>
               <p className="mt-0.5">{apiError}</p>
@@ -204,6 +198,7 @@ export default function UserManagementPage() {
               <tr className="border-b border-blue-50 text-left text-gray-400 font-medium">
                 <th className="py-4 px-2 text-xs uppercase tracking-wider">ID</th>
                 <th className="py-4 px-4 text-xs uppercase tracking-wider">Username</th>
+                <th className="py-4 px-4 text-xs uppercase tracking-wider">Nama</th>
                 <th className="py-4 px-4 text-xs uppercase tracking-wider">Hak Akses</th>
                 <th className="py-4 px-4 text-xs uppercase tracking-wider text-right">Aksi</th>
               </tr>
@@ -229,6 +224,7 @@ export default function UserManagementPage() {
                   <tr key={user.id} className="hover:bg-blue-50/20 transition-colors">
                     <td className="py-4 px-2 font-medium text-gray-400">#{user.id}</td>
                     <td className="py-4 px-4 font-semibold text-gray-700">{user.username}</td>
+                    <td className="py-4 px-4 text-gray-600">{user.name}</td>
                     <td className="py-4 px-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${roleStyles[user.role]}`}>
                         {roleLabels[user.role]}
@@ -273,7 +269,7 @@ export default function UserManagementPage() {
           <div className="p-6 space-y-4">
             {formError && (
               <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded-xl flex items-start gap-3 text-red-700 text-xs">
-                <FiAlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <FiAlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <p className="font-medium">{formError}</p>
               </div>
             )}
@@ -294,6 +290,20 @@ export default function UserManagementPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                Nama Lengkap
+              </label>
+              <input
+                type="text"
+                required
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="Masukkan nama lengkap"
+                className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-800 placeholder-gray-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                 Role / Hak Akses
               </label>
               <select
@@ -301,8 +311,8 @@ export default function UserManagementPage() {
                 onChange={(e) => setRoleInput(e.target.value as any)}
                 className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-700 bg-white"
               >
-                <option value="student">Santri</option>
-                <option value="ustadz">Teacher</option>
+                <option value="santri">Santri</option>
+                <option value="ustadz">Ustadz</option>
                 <option value="admin">Admin</option>
               </select>
             </div>

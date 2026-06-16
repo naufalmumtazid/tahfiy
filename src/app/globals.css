@@ -36,3 +36,7 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+input, select {
+  color: #171717;
+}

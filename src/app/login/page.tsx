@@ -155,7 +155,7 @@ export default function LoginPage() {
           />
           <div>
             <h1 className="font-bold text-xl tracking-tight">Tahfiy</h1>
-            <p className="text-xs text-blue-200">Quran Memory System</p>
+            <p className="text-xs text-blue-200">Tahfidz Digital System</p>
           </div>
         </div>
 

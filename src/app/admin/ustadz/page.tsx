@@ -1,40 +1,69 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { FiUserPlus, FiEdit2, FiTrash2, FiSearch, FiAlertCircle, FiCheckCircle } from "react-icons/fi";
+import { FiUserPlus, FiEdit2, FiTrash2, FiSearch, FiAlertCircle } from "react-icons/fi";
+import { toast } from "react-toastify";
 import Header from "@/components/Header";
 import Modal from "@/components/Modal";
 
-interface Teacher {
+interface Ustadz {
   id: number;
+  user_id: number;
+  name: string;
+  specialization: string;
+  phone: string;
+}
+
+interface AvailableUser {
+  id: number;
+  username: string;
   name: string;
 }
 
-export default function TeachersPage() {
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
+export default function UstadzPage() {
+  const [ustadz, setUstadz] = useState<Ustadz[]>([]);
+  const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit">("create");
-  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
+  const [selectedUstadz, setSelectedUstadz] = useState<Ustadz | null>(null);
 
-  const [nameInput, setNameInput] = useState("");
+  const [userIdInput, setUserIdInput] = useState<string>("");
+  const [specializationInput, setSpecializationInput] = useState("");
+  const [phoneInput, setPhoneInput] = useState("");
   const [submitLoading, setSubmitLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const fetchTeachers = async () => {
-    setLoading(true);
+  const fetchAvailableUsers = async () => {
     try {
-      const response = await fetch("/api/teachers");
+      const response = await fetch("/api/users");
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Gagal memuat daftar teacher.");
+        throw new Error(data.error || "Gagal memuat daftar pengguna.");
       }
       const data = await response.json();
-      setTeachers(data.teachers || []);
+      const users: AvailableUser[] = (data.users || []).filter(
+        (user: any) => user.role === "ustadz"
+      );
+      setAvailableUsers(users);
+    } catch (err: any) {
+      console.error(err);
+    }
+  };
+
+  const fetchUstadz = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/ustadz");
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Gagal memuat daftar ustadz.");
+      }
+      const data = await response.json();
+      setUstadz(data.ustadz || []);
       setApiError(null);
     } catch (err: any) {
       setApiError(err.message);
@@ -44,26 +73,26 @@ export default function TeachersPage() {
   };
 
   useEffect(() => {
-    fetchTeachers();
+    fetchUstadz();
+    fetchAvailableUsers();
   }, []);
-
-  const triggerSuccess = (message: string) => {
-    setSuccessMessage(message);
-    setTimeout(() => setSuccessMessage(null), 4000);
-  };
 
   const handleOpenCreate = () => {
     setModalType("create");
-    setSelectedTeacher(null);
-    setNameInput("");
+    setSelectedUstadz(null);
+    setUserIdInput(availableUsers[0]?.id?.toString() || "");
+    setSpecializationInput("");
+    setPhoneInput("");
     setFormError(null);
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = (teacher: Teacher) => {
+  const handleOpenEdit = (ustadz: Ustadz) => {
     setModalType("edit");
-    setSelectedTeacher(teacher);
-    setNameInput(teacher.name);
+    setSelectedUstadz(ustadz);
+    setUserIdInput(ustadz.user_id.toString());
+    setSpecializationInput(ustadz.specialization);
+    setPhoneInput(ustadz.phone);
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -74,9 +103,13 @@ export default function TeachersPage() {
     setSubmitLoading(true);
 
     try {
-      const url = modalType === "create" ? "/api/teachers" : `/api/teachers/${selectedTeacher?.id}`;
+      const url = modalType === "create" ? "/api/ustadz" : `/api/ustadz/${selectedUstadz?.id}`;
       const method = modalType === "create" ? "POST" : "PUT";
-      const payload = { name: nameInput };
+      const payload = {
+        user_id: parseInt(userIdInput, 10),
+        specialization: specializationInput,
+        phone: phoneInput,
+      };
 
       const response = await fetch(url, {
         method,
@@ -84,11 +117,11 @@ export default function TeachersPage() {
         body: JSON.stringify(payload),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Gagal memproses data teacher.");
+      if (!response.ok) throw new Error(data.error || "Gagal memproses data ustadz.");
 
       setIsModalOpen(false);
-      triggerSuccess(modalType === "create" ? "Teacher berhasil ditambahkan!" : "Data teacher berhasil diperbarui!");
-      fetchTeachers();
+      toast.success(modalType === "create" ? "Ustadz berhasil ditambahkan!" : "Data ustadz berhasil diperbarui!");
+      fetchUstadz();
     } catch (err: any) {
       setFormError(err.message);
     } finally {
@@ -96,39 +129,36 @@ export default function TeachersPage() {
     }
   };
 
-  const handleDelete = async (teacher: Teacher) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus teacher "${teacher.name}"?`)) return;
+  const handleDelete = async (ustadz: Ustadz) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus ustadz "${ustadz.name}"?`)) return;
 
     try {
-      const response = await fetch(`/api/teachers/${teacher.id}`, { method: "DELETE" });
+      const response = await fetch(`/api/ustadz/${ustadz.id}`, { method: "DELETE" });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Gagal menghapus teacher.");
-      triggerSuccess(`Teacher "${teacher.name}" berhasil dihapus.`);
-      fetchTeachers();
+      if (!response.ok) throw new Error(data.error || "Gagal menghapus ustadz.");
+      toast.success(`Ustadz "${ustadz.name}" berhasil dihapus.`);
+      fetchUstadz();
     } catch (err: any) {
-      alert(err.message);
+      toast.error(err.message);
     }
   };
 
-  const filteredTeachers = teachers.filter((teacher) =>
-    teacher.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredUstadz = ustadz.filter((ustadz) =>
+    ustadz.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const availableCreateUsers = availableUsers.filter(
+    (user) => !ustadz.some((item) => item.user_id === user.id)
   );
 
   return (
     <>
       <Header
-        title="Manajemen Teachers"
-        subtitle="Kelola daftar teachers dalam sistem"
+        title="Manajemen Ustadz"
+        subtitle="Kelola daftar ustadz dalam sistem"
         showNewSession={false}
         showSearch={false}
       />
-
-      {successMessage && (
-        <div className="fixed top-6 right-6 bg-white border border-blue-100 text-blue-800 px-5 py-4 rounded-2xl shadow-xl flex items-center gap-3 z-100">
-          <FiCheckCircle className="w-5 h-5 text-blue-500" />
-          <span className="text-sm font-semibold">{successMessage}</span>
-        </div>
-      )}
 
       <div className="bg-white rounded-3xl border border-blue-100 shadow-sm p-6 overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -136,7 +166,7 @@ export default function TeachersPage() {
             <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Cari teacher berdasarkan nama..."
+              placeholder="Cari ustadz berdasarkan nama..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-sm bg-gray-50/50"
@@ -147,7 +177,7 @@ export default function TeachersPage() {
             className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-semibold text-sm transition-all shadow-lg shadow-blue-500/10 flex items-center justify-center gap-2 cursor-pointer"
           >
             <FiUserPlus className="w-4 h-4" />
-            Tambah Teacher
+            Tambah Ustadz
           </button>
         </div>
 
@@ -166,9 +196,11 @@ export default function TeachersPage() {
             <thead>
               <tr className="border-b border-blue-50 text-left text-gray-400 font-medium">
                 <th className="py-4 px-2 text-xs uppercase tracking-wider">ID</th>
-                <th className="py-4 px-4 text-xs uppercase tracking-wider">Nama Teacher</th>
+                <th className="py-4 px-4 text-xs uppercase tracking-wider">Nama Ustadz</th>
+                <th className="py-4 px-4 text-xs uppercase tracking-wider">Spesialisasi</th>
+                <th className="py-4 px-4 text-xs uppercase tracking-wider">Telepon</th>
                 <th className="py-4 px-4 text-xs uppercase tracking-wider text-right">Aksi</th>
-              </tr>
+               </tr>
             </thead>
             <tbody className="divide-y divide-blue-50/50">
               {loading ? (
@@ -179,30 +211,32 @@ export default function TeachersPage() {
                     <td className="py-4 px-4 text-right"><div className="h-8 bg-gray-100 rounded-xl w-16 ml-auto" /></td>
                   </tr>
                 ))
-              ) : filteredTeachers.length === 0 ? (
+              ) : filteredUstadz.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="py-10 text-center text-gray-400">
-                    Tidak ada data teachers ditemukan.
+                    Tidak ada data ustadz ditemukan.
                   </td>
                 </tr>
               ) : (
-                filteredTeachers.map((teacher) => (
-                  <tr key={teacher.id} className="hover:bg-blue-50/20 transition-colors">
-                    <td className="py-4 px-2 font-medium text-gray-400">#{teacher.id}</td>
-                    <td className="py-4 px-4 font-semibold text-gray-700">{teacher.name}</td>
+                filteredUstadz.map((ustadz) => (
+                  <tr key={ustadz.id} className="hover:bg-blue-50/20 transition-colors">
+                    <td className="py-4 px-2 font-medium text-gray-400">#{ustadz.id}</td>
+                    <td className="py-4 px-4 font-semibold text-gray-700">{ustadz.name}</td>
+                    <td className="py-4 px-4 text-gray-600">{ustadz.specialization || "-"}</td>
+                    <td className="py-4 px-4 text-gray-600">{ustadz.phone || "-"}</td>
                     <td className="py-4 px-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button
-                          onClick={() => handleOpenEdit(teacher)}
+                          onClick={() => handleOpenEdit(ustadz)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition cursor-pointer"
-                          title="Edit Teacher"
+                          title="Edit Ustadz"
                         >
                           <FiEdit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(teacher)}
+                          onClick={() => handleDelete(ustadz)}
                           className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition cursor-pointer"
-                          title="Hapus Teacher"
+                          title="Hapus Ustadz"
                         >
                           <FiTrash2 className="w-4 h-4" />
                         </button>
@@ -219,7 +253,7 @@ export default function TeachersPage() {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={modalType === "create" ? "Tambah Teacher Baru" : "Edit Teacher"}
+        title={modalType === "create" ? "Tambah Ustadz Baru" : "Edit Ustadz"}
       >
         <form onSubmit={handleSubmit}>
           <div className="p-6 space-y-4">
@@ -232,14 +266,55 @@ export default function TeachersPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Nama Teacher
+                Pilih User Ustadz
+              </label>
+              <select
+                required
+                value={userIdInput}
+                onChange={(e) => setUserIdInput(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-800 bg-white"
+              >
+                <option value="">Pilih user ustadz...</option>
+                {(modalType === "edit" ? availableUsers : availableCreateUsers).map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name} ({user.username})
+                  </option>
+                ))}
+              </select>
+              {(modalType === "create" && availableCreateUsers.length === 0) && (
+                <p className="mt-2 text-xs text-gray-500">
+                  Belum ada user ustadz yang belum terdaftar. Tambahkan user terlebih dahulu di menu Pengguna.
+                </p>
+              )}
+              {(modalType === "edit" && availableUsers.length === 0) && (
+                <p className="mt-2 text-xs text-gray-500">
+                  Tidak ada user ustadz yang tersedia untuk dipilih.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                Spesialisasi
               </label>
               <input
                 type="text"
-                required
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                placeholder="Masukkan nama teacher"
+                value={specializationInput}
+                onChange={(e) => setSpecializationInput(e.target.value)}
+                placeholder="Masukkan spesialisasi"
+                className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-800 placeholder-gray-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                Telepon
+              </label>
+              <input
+                type="text"
+                value={phoneInput}
+                onChange={(e) => setPhoneInput(e.target.value)}
+                placeholder="Masukkan nomor telepon"
                 className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-800 placeholder-gray-400"
               />
             </div>

@@ -16,11 +16,11 @@ interface SidebarProps {
 
 const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: MdDashboard, href: "/admin" },
-    { id: "ziyadah", label: "Ziyadah", icon: FiBookOpen, href: "/admin/quran/ziyadah" },
-    { id: "murojaah", label: "Murojaah", icon: FiBookOpen, href: "/admin/quran/murojaah" },
+    { id: "ziyadah", label: "Ziyadah", icon: FiBookOpen, href: "/admin/ziyadah" },
+    { id: "murojaah", label: "Murojaah", icon: FiBookOpen, href: "/admin/murojaah" },
     { id: "halaqah", label: "Halaqah", icon: MdOutlineNotes, href: "/admin/halaqah" },
-    { id: "students", label: "Santri", icon: MdPeople, href: "/admin/students" },
-    { id: "teachers", label: "Teachers", icon: MdPeople, href: "/admin/teachers" },
+    { id: "santri", label: "Santri", icon: MdPeople, href: "/admin/santri" },
+    { id: "ustadz", label: "Ustadz", icon: MdPeople, href: "/admin/ustadz" },
     { id: "users", label: "Users", icon: FiUsers, href: "/admin/users" },
 ];
 
@@ -62,7 +62,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                         />
                         <div>
                             <h1 className="font-bold text-gray-800 text-xl tracking-tight">Tahfiy</h1>
-                            <p className="text-xs text-gray-500 mt-0.5">Quran Memory System</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Tahfidz Digital System</p>
                         </div>
                     </div>
                 </div>
