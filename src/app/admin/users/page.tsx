@@ -281,7 +281,7 @@ export default function UserManagementPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Username
+                Username <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -295,7 +295,7 @@ export default function UserManagementPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Nama Lengkap
+                Nama Lengkap <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -309,7 +309,7 @@ export default function UserManagementPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Role / Hak Akses
+                Role / Hak Akses <span className="text-red-500">*</span>
               </label>
               <select
                 value={roleInput}
@@ -329,7 +329,7 @@ export default function UserManagementPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Password {modalType === "edit" && <span className="text-gray-400 normal-case">(Opsional)</span>}
+                Password {modalType !== "edit" ? <span className="text-red-500">*</span> :  <span className="text-gray-400 normal-case">(Opsional)</span>}
               </label>
               <input
                 type="password"

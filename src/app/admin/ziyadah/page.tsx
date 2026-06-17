@@ -35,7 +35,7 @@ export default function ZiyadahPage() {
   } = useForm<ZiyadahFormValues>({
     defaultValues: {
       santri_id: 0,
-      date: "",
+      date: new Date().toISOString().split('T')[0],
       juz: 1,
       start_page: 1,
       end_page: 1,
@@ -95,7 +95,7 @@ export default function ZiyadahPage() {
     setSelectedZiyadah(null);
     reset({
       santri_id: santriOptions[0]?.id ?? 0,
-      date: "",
+      date: new Date().toISOString().split('T')[0],
       juz: 1,
       start_page: 1,
       end_page: 1,
@@ -312,7 +312,7 @@ export default function ZiyadahPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Santri
+                Santri <span className="text-red-500">*</span>
               </label>
               <select
                 {...register("santri_id", { valueAsNumber: true })}
@@ -331,7 +331,7 @@ export default function ZiyadahPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tanggal</label>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tanggal <span className="text-red-500">*</span></label>
               <input
                 type="date"
                 {...register("date")}
@@ -344,7 +344,7 @@ export default function ZiyadahPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Juz</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Juz <span className="text-red-500">*</span></label>
                 <input
                   type="number"
                   min={1}
@@ -357,7 +357,7 @@ export default function ZiyadahPage() {
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Hal. Mulai</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Hal. Mulai <span className="text-red-500">*</span></label>
                 <input
                   type="number"
                   min={1}
@@ -369,7 +369,7 @@ export default function ZiyadahPage() {
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Hal. Selesai</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Hal. Selesai <span className="text-red-500">*</span></label>
                 <input
                   type="number"
                   min={1}

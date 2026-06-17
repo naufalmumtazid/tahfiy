@@ -251,7 +251,7 @@ export default function HalaqahPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Nama Halaqah
+                Nama Halaqah <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -265,7 +265,7 @@ export default function HalaqahPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Ustadz
+                Ustadz <span className="text-red-500">*</span>
               </label>
               {ustadzList.length > 0 ? (
                 <select

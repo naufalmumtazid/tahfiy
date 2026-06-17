@@ -266,7 +266,7 @@ export default function UstadzPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Pilih User Ustadz
+                Pilih User Ustadz <span className="text-red-500">*</span>
               </label>
               <select
                 required
@@ -274,7 +274,7 @@ export default function UstadzPage() {
                 onChange={(e) => setUserIdInput(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-800 bg-white"
               >
-                <option value="">Pilih user ustadz...</option>
+                <option value="">Pilih user dengan role ustadz...</option>
                 {(modalType === "edit" ? availableUsers : availableCreateUsers).map((user) => (
                   <option key={user.id} value={user.id}>
                     {user.name} ({user.username})

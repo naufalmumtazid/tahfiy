@@ -25,7 +25,7 @@ CREATE TABLE ustadz (
 CREATE TABLE santri (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL UNIQUE, -- link to users table
-    class VARCHAR(50) NOT NULL, -- e.g., "7A", "8B", "9C", etc.
+    class VARCHAR(50) DEFAULT NULL, -- e.g., "7A", "8B", "9C", etc.
     halaqah_id INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     FOREIGN KEY (halaqah_id) REFERENCES halaqah(id) ON DELETE CASCADE

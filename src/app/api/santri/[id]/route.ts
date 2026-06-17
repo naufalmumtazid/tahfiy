@@ -32,9 +32,9 @@ export async function PUT(
     const body = await request.json();
     const { name, class: className, halaqah_id } = body;
 
-    if (!name || !className || !halaqah_id) {
+    if (!name || !halaqah_id) {
       return NextResponse.json(
-        { error: "Nama, Kelas, dan Halaqah wajib diisi." },
+        { error: "Nama dan Halaqah wajib diisi." },
         { status: 400 }
       );
     }

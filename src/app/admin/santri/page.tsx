@@ -271,7 +271,7 @@ export default function SantriPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Nama Lengkap
+                Nama Lengkap <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -289,7 +289,6 @@ export default function SantriPage() {
               </label>
               <input
                 type="text"
-                required
                 value={classInput}
                 onChange={(e) => setClassInput(e.target.value)}
                 placeholder="Contoh: 7A, 8B, 9C"
@@ -299,9 +298,8 @@ export default function SantriPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Halaqah
+                Halaqah <span className="text-red-500">*</span>
               </label>
-              {halaqahs.length > 0 ? (
                 <select
                   required
                   value={halaqahInput}
@@ -315,16 +313,6 @@ export default function SantriPage() {
                     </option>
                   ))}
                 </select>
-              ) : (
-                <input
-                  type="number"
-                  required
-                  value={halaqahInput}
-                  onChange={(e) => setHalaqahInput(Number(e.target.value))}
-                  placeholder="ID Halaqah"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-800 placeholder-gray-400"
-                />
-              )}
             </div>
           </div>
 

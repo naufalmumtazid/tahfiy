@@ -57,7 +57,7 @@ export async function GET() {
       id: s.id,
       user_id: s.user_id,
       name: s.users?.name || "",
-      class: s.class,
+      class: s.class || "-",
       halaqah_id: s.halaqah_id,
       halaqah_name: s.halaqah ? s.halaqah.name : "N/A",
     }));
@@ -81,9 +81,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, class: className, halaqah_id } = body;
 
-    if (!name || !className || !halaqah_id) {
+    if (!name || !halaqah_id) {
       return NextResponse.json(
-        { error: "Nama, Kelas, dan Halaqah wajib diisi." },
+        { error: "Nama dan Halaqah wajib diisi." },
         { status: 400 }
       );
     }
