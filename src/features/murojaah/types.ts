@@ -1,8 +1,3 @@
-export interface Halaqah {
-  id: number;
-  name: string;
-}
-
 export interface Murojaah {
   id: number;
   santri_id: number;

@@ -1,21 +1,11 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/database/supabase/server";
-import { verifyJWT } from "@/utils/jwt";
+import { createClient } from "@/lib/database/supabase/server";
 import { getErrorMessage } from "@/utils/error";
+import { checkIsAuthorized } from "@/utils/auth";
 import bcrypt from "bcryptjs";
 
-async function checkIsAdmin(): Promise<boolean> {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("auth_token")?.value;
-    if (!token) return false;
-    const payload = await verifyJWT(token);
-    return payload?.role === "admin";
-  } catch {
-    return false;
-  }
-}
+const ALLOWED_ROLES = ["admin"];
 
 export async function PUT(
   request: Request,
@@ -25,8 +15,8 @@ export async function PUT(
     const { id } = await params;
     const userId = parseInt(id, 10);
 
-    const isAdmin = await checkIsAdmin();
-    if (!isAdmin) {
+    const isAuthorized = await checkIsAuthorized(ALLOWED_ROLES);
+    if (!isAuthorized) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
     }
 
@@ -100,8 +90,8 @@ export async function DELETE(
     const { id } = await params;
     const userId = parseInt(id, 10);
 
-    const isAdmin = await checkIsAdmin();
-    if (!isAdmin) {
+    const isAuthorized = await checkIsAuthorized(ALLOWED_ROLES);
+    if (!isAuthorized) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
     }
 

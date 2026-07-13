@@ -1,52 +1,50 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/database/supabase/server";
-import { verifyJWT } from "@/utils/jwt";
+import { createClient } from "@/lib/database/supabase/server";
 import { getErrorMessage } from "@/utils/error";
+import { checkIsAuthorized } from "@/utils/auth";
+import { verifyJWT } from "@/utils/jwt";
 
-async function checkIsAdmin(): Promise<boolean> {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("auth_token")?.value;
-    if (!token) return false;
-    const payload = await verifyJWT(token);
-    return payload?.role === "admin";
-  } catch {
-    return false;
-  }
-}
+const ALLOWED_ROLES = ["admin", "ustadz"];
 
 export async function GET() {
   try {
-    const isAdmin = await checkIsAdmin();
-    if (!isAdmin) {
+    const isAuthorized = await checkIsAuthorized(ALLOWED_ROLES);
+    if (!isAuthorized) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
     }
 
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
+    const token = cookieStore.get("auth_token")?.value;
+    const payload = token ? await verifyJWT(token) : null;
+    const userRole = payload?.role as string | undefined;
 
-    const { data, error } = await supabase
-      .from("halaqah")
-      .select("id, name, ustadz_id, ustadz(user_id, users(name))")
-      .order("id", { ascending: true });
+    let query = supabase.from("halaqah").select("id, name, ustadz_id, ustadz(user_id, users(name))").order("id", { ascending: true });
 
+    if (userRole === "ustadz") {
+      const { data: ustadzRows } = await supabase.from("ustadz").select("id").eq("user_id", payload?.userId).limit(1);
+      const ustadzId = Array.isArray(ustadzRows) && ustadzRows[0] ? (ustadzRows[0] as Record<string, unknown>).id : null;
+      if (!ustadzId) return NextResponse.json({ halaqahs: [] });
+      query = query.eq("ustadz_id", ustadzId);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
 
-    type HalaqahRow = {
-      id: number;
-      name: string;
-      ustadz_id: number;
-      ustadz?: { users?: { name?: string } };
-    };
+    const halaqahs = ((data || []) as unknown[]).map((row) => {
+      const h = row as Record<string, unknown>;
+      const ustadz = Array.isArray(h.ustadz) ? h.ustadz[0] : (h.ustadz as Record<string, unknown> | undefined);
+      const rawUser = ustadz?.users;
+      const userName = Array.isArray(rawUser) ? rawUser[0]?.name : (rawUser as Record<string, string> | undefined)?.name;
 
-    const halaqahs = ((data || []) as HalaqahRow[]).map((h) => ({
-      id: h.id,
-      name: h.name,
-      ustadz_id: h.ustadz_id,
-      ustadz_name: h.ustadz?.users?.name || "N/A",
-    }));
-
+      return {
+        id: h.id as number,
+        name: h.name as string,
+        ustadz_id: h.ustadz_id as number,
+        ustadz_name: userName ?? "-",
+      };
+    });
 
     return NextResponse.json({ halaqahs });
   } catch (error: unknown) {
@@ -56,8 +54,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const isAdmin = await checkIsAdmin();
-    if (!isAdmin) {
+    const isAuthorized = await checkIsAuthorized(ALLOWED_ROLES);
+    if (!isAuthorized) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
     }
 
@@ -76,19 +74,24 @@ export async function POST(request: Request) {
 
     const { data: newHalaqah, error } = await supabase
       .from("halaqah")
-      .insert([{ name, ustadz_id: parseInt(ustadz_id, 10) }])
+      .insert([{ name, ustadz_id }]) // Langsung pakai ustadz_id (asumsi bertipe number dari React Hook Form)
       .select("id, name, ustadz_id, ustadz(user_id, users(name))")
       .single();
 
-    if (error) throw error;
+    if (error || !newHalaqah) throw error || new Error("Failed to create halaqah.");
+
+    const h = newHalaqah as Record<string, unknown>;
+    const ustadz = Array.isArray(h.ustadz) ? h.ustadz[0] : (h.ustadz as Record<string, unknown> | undefined);
+    const rawUser = ustadz?.users;
+    const userName = Array.isArray(rawUser) ? rawUser[0]?.name : (rawUser as Record<string, string> | undefined)?.name;
 
     return NextResponse.json(
       {
         halaqah: {
-          id: newHalaqah.id,
-          name: newHalaqah.name,
-          ustadz_id: newHalaqah.ustadz_id,
-          ustadz_name: newHalaqah.ustadz?.[0]?.users?.[0]?.name || "N/A",
+          id: h.id as number,
+          name: h.name as string,
+          ustadz_id: h.ustadz_id as number,
+          ustadz_name: userName ?? "-",
         },
       },
       { status: 201 }

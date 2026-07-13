@@ -1,25 +1,40 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/database/supabase/server";
-import { verifyJWT } from "@/utils/jwt";
+import { createClient } from "@/lib/database/supabase/server";
 import { getErrorMessage } from "@/utils/error";
+import { checkIsAuthorized } from "@/utils/auth";
+import { Ziyadah } from "@/features/ziyadah/types";
 
-async function checkIsAdmin(): Promise<boolean> {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("auth_token")?.value;
-    if (!token) return false;
-    const payload = await verifyJWT(token);
-    return payload?.role === "admin";
-  } catch {
-    return false;
-  }
+function formatZiyadahResponse(data: unknown): Ziyadah {
+  const d = data as Record<string, unknown>;
+  
+  const targetSantri = Array.isArray(d.santri) ? d.santri[0] : d.santri;
+
+  const rawUser = targetSantri?.users;
+  const userName = Array.isArray(rawUser) ? rawUser[0]?.name : rawUser?.name;
+
+  const rawHalaqah = targetSantri?.halaqah;
+  const halaqahName = Array.isArray(rawHalaqah) ? rawHalaqah[0]?.name : rawHalaqah?.name;
+
+  return {
+    id: Number(d.id),
+    santri_id: Number(d.santri_id),
+    date: String(d.date),
+    juz: Number(d.juz),
+    start_page: Number(d.start_page),
+    end_page: Number(d.end_page),
+    name: userName ?? "-",
+    class: String(targetSantri?.class ?? "-"),
+    halaqah_name: String(halaqahName ?? "-"),
+  };
 }
+
+const ALLOWED_ROLES = ["admin", "ustadz"];
 
 export async function GET() {
   try {
-    const isAdmin = await checkIsAdmin();
-    if (!isAdmin) {
+    const isAuthorized = await checkIsAuthorized(ALLOWED_ROLES);
+    if (!isAuthorized) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
     }
 
@@ -35,31 +50,9 @@ export async function GET() {
 
     if (error) throw error;
 
-    type ZiyadahRow = {
-      id: number;
-      santri_id: number;
-      date: string;
-      juz: number;
-      start_page: number;
-      end_page: number;
-      santri?: Array<{
-        class?: string;
-        halaqah?: Array<{ name?: string }>;
-        users?: Array<{ name?: string }>;
-      }>;
-    };
-
-    const ziyadah = ((ziyadahData || []) as ZiyadahRow[]).map((z) => ({
-      id: z.id,
-      santri_id: z.santri_id,
-      date: z.date,
-      juz: z.juz,
-      start_page: z.start_page,
-      end_page: z.end_page,
-      name: z.santri?.[0]?.users?.[0]?.name ?? "",
-      class: z.santri?.[0]?.class || "",
-      halaqah_name: z.santri?.[0]?.halaqah?.[0]?.name || "",
-    }));
+    // 2. Cast data dari Supabase menjadi unknown[] terlebih dahulu
+    const rawRows = (ziyadahData as unknown[]) || [];
+    const ziyadah = rawRows.map((z) => formatZiyadahResponse(z));
 
     return NextResponse.json({ ziyadah });
   } catch (error: unknown) {
@@ -69,8 +62,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const isAdmin = await checkIsAdmin();
-    if (!isAdmin) {
+    const isAuthorized = await checkIsAuthorized(ALLOWED_ROLES);
+    if (!isAuthorized) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
     }
 
@@ -86,15 +79,7 @@ export async function POST(request: Request) {
 
     const { data: newZiyadah, error } = await supabase
       .from("ziyadah")
-      .insert([
-        {
-          santri_id: parseInt(santri_id, 10),
-          date,
-          juz: parseInt(juz, 10),
-          start_page: parseInt(start_page, 10),
-          end_page: parseInt(end_page, 10),
-        },
-      ])
+      .insert([{ santri_id, date, juz, start_page, end_page }])
       .select("id, santri_id, date, juz, start_page, end_page, santri(id, class, halaqah(name), users(name))")
       .single();
 
@@ -102,19 +87,7 @@ export async function POST(request: Request) {
       throw error || new Error("Failed to create ziyadah.");
     }
 
-    const formatted = {
-      id: newZiyadah.id,
-      santri_id: newZiyadah.santri_id,
-      date: newZiyadah.date,
-      juz: newZiyadah.juz,
-      start_page: newZiyadah.start_page,
-      end_page: newZiyadah.end_page,
-      name: newZiyadah.santri?.[0]?.users?.[0]?.name ?? "",
-      class: newZiyadah.santri?.[0]?.class || "",
-      halaqah_name: newZiyadah.santri?.[0]?.halaqah?.[0]?.name || "",
-    };
-
-    return NextResponse.json({ ziyadah: formatted }, { status: 201 });
+    return NextResponse.json({ ziyadah: formatZiyadahResponse(newZiyadah) }, { status: 201 });
   } catch (error: unknown) {
     return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }

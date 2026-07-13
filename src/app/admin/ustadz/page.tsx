@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Select from "react-select";
 import { FiUserPlus, FiEdit2, FiTrash2, FiSearch, FiAlertCircle } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Header from "@/components/Header";
@@ -77,22 +78,34 @@ export default function UstadzPage() {
     })();
   }, []);
 
+  // Filter ustadz yang belum terdaftar di tabel ustadz (untuk modal create)
+  const availableCreateUsers = availableUsers.filter(
+    (user) => !ustadz.some((item) => item.user_id === user.id)
+  );
+
+  const userOptions = modalType === "edit"
+    ? availableUsers.filter((user) => user.id === selectedUstadz?.user_id)
+    : availableCreateUsers;
+
+  const selectedUserOption = userOptions.find((user) => user.id.toString() === userIdInput) || null;
+
   const handleOpenCreate = () => {
     setModalType("create");
     setSelectedUstadz(null);
-    setUserIdInput(availableUsers[0]?.id?.toString() || "");
+    // FIX: Arahkan default value ke user yang MEMANG TERSEDIA di pilihan Create
+    setUserIdInput(availableCreateUsers[0]?.id?.toString() || "");
     setSpecializationInput("");
     setPhoneInput("");
     setFormError(null);
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = (ustadz: Ustadz) => {
+  const handleOpenEdit = (ustadzItem: Ustadz) => {
     setModalType("edit");
-    setSelectedUstadz(ustadz);
-    setUserIdInput(ustadz.user_id.toString());
-    setSpecializationInput(ustadz.specialization);
-    setPhoneInput(ustadz.phone);
+    setSelectedUstadz(ustadzItem);
+    setUserIdInput(ustadzItem.user_id.toString());
+    setSpecializationInput(ustadzItem.specialization || "");
+    setPhoneInput(ustadzItem.phone || "");
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -105,10 +118,13 @@ export default function UstadzPage() {
     try {
       const url = modalType === "create" ? "/api/ustadz" : `/api/ustadz/${selectedUstadz?.id}`;
       const method = modalType === "create" ? "POST" : "PUT";
+      
+      // Mengirim tipe data murni (tanpa parseInt manual di backend nanti)
       const payload = {
         user_id: parseInt(userIdInput, 10),
         specialization: specializationInput,
         phone: phoneInput,
+        name: selectedUstadz?.name // Dibutuhkan jika backend PUT memerlukan replikasi field name ke tabel users
       };
 
       const response = await fetch(url, {
@@ -121,7 +137,9 @@ export default function UstadzPage() {
 
       setIsModalOpen(false);
       toast.success(modalType === "create" ? "Ustadz berhasil ditambahkan!" : "Data ustadz berhasil diperbarui!");
-      fetchUstadz();
+      
+      // Refresh state data dari server
+      await Promise.all([fetchUstadz(), fetchAvailableUsers()]);
     } catch (err: unknown) {
       setFormError(getErrorMessage(err));
     } finally {
@@ -129,26 +147,22 @@ export default function UstadzPage() {
     }
   };
 
-  const handleDelete = async (ustadz: Ustadz) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus ustadz "${ustadz.name}"?`)) return;
+  const handleDelete = async (ustadzItem: Ustadz) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus ustadz "${ustadzItem.name}"?\nMenghapus data ustadz ini juga akan menghapus akun user loginnnya.`)) return;
 
     try {
-      const response = await fetch(`/api/ustadz/${ustadz.id}`, { method: "DELETE" });
+      const response = await fetch(`/api/ustadz/${ustadzItem.id}`, { method: "DELETE" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Gagal menghapus ustadz.");
-      toast.success(`Ustadz "${ustadz.name}" berhasil dihapus.`);
-      fetchUstadz();
+      toast.success(`Ustadz "${ustadzItem.name}" berhasil dihapus.`);
+      await Promise.all([fetchUstadz(), fetchAvailableUsers()]);
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     }
   };
 
-  const filteredUstadz = ustadz.filter((ustadz) =>
-    ustadz.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const availableCreateUsers = availableUsers.filter(
-    (user) => !ustadz.some((item) => item.user_id === user.id)
+  const filteredUstadz = ustadz.filter((u) =>
+    u.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -208,33 +222,35 @@ export default function UstadzPage() {
                   <tr key={idx} className="animate-pulse">
                     <td className="py-4 px-2"><div className="h-4 bg-gray-100 rounded w-6" /></td>
                     <td className="py-4 px-4"><div className="h-4 bg-gray-100 rounded w-48" /></td>
+                    <td className="py-4 px-4"><div className="h-4 bg-gray-100 rounded w-32" /></td>
+                    <td className="py-4 px-4"><div className="h-4 bg-gray-100 rounded w-24" /></td>
                     <td className="py-4 px-4 text-right"><div className="h-8 bg-gray-100 rounded-xl w-16 ml-auto" /></td>
                   </tr>
                 ))
               ) : filteredUstadz.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="py-10 text-center text-gray-400">
+                  <td colSpan={5} className="py-10 text-center text-gray-400">
                     Tidak ada data ustadz ditemukan.
                   </td>
                 </tr>
               ) : (
-                filteredUstadz.map((ustadz) => (
-                  <tr key={ustadz.id} className="hover:bg-blue-50/20 transition-colors">
-                    <td className="py-4 px-2 font-medium text-gray-400">#{ustadz.id}</td>
-                    <td className="py-4 px-4 font-semibold text-gray-700">{ustadz.name}</td>
-                    <td className="py-4 px-4 text-gray-600">{ustadz.specialization || "-"}</td>
-                    <td className="py-4 px-4 text-gray-600">{ustadz.phone || "-"}</td>
+                filteredUstadz.map((item) => (
+                  <tr key={item.id} className="hover:bg-blue-50/20 transition-colors">
+                    <td className="py-4 px-2 font-medium text-gray-400">#{item.id}</td>
+                    <td className="py-4 px-4 font-semibold text-gray-700">{item.name}</td>
+                    <td className="py-4 px-4 text-gray-600">{item.specialization || "-"}</td>
+                    <td className="py-4 px-4 text-gray-600">{item.phone || "-"}</td>
                     <td className="py-4 px-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button
-                          onClick={() => handleOpenEdit(ustadz)}
+                          onClick={() => handleOpenEdit(item)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition cursor-pointer"
                           title="Edit Ustadz"
                         >
                           <FiEdit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(ustadz)}
+                          onClick={() => handleDelete(item)}
                           className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition cursor-pointer"
                           title="Hapus Ustadz"
                         >
@@ -268,27 +284,20 @@ export default function UstadzPage() {
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                 Pilih User Ustadz <span className="text-red-500">*</span>
               </label>
-              <select
-                required
-                value={userIdInput}
-                onChange={(e) => setUserIdInput(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-800 bg-white"
-              >
-                <option value="">Pilih user dengan role ustadz...</option>
-                {(modalType === "edit" ? availableUsers : availableCreateUsers).map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name} ({user.username})
-                  </option>
-                ))}
-              </select>
-              {(modalType === "create" && availableCreateUsers.length === 0) && (
-                <p className="mt-2 text-xs text-gray-500">
-                  Belum ada user ustadz yang belum terdaftar. Tambahkan user terlebih dahulu di menu Pengguna.
-                </p>
-              )}
-              {(modalType === "edit" && availableUsers.length === 0) && (
-                <p className="mt-2 text-xs text-gray-500">
-                  Tidak ada user ustadz yang tersedia untuk dipilih.
+              <Select
+                options={userOptions.map((user) => ({ value: user.id.toString(), label: `${user.name} (${user.username})` }))}
+                value={selectedUserOption ? { value: selectedUserOption.id.toString(), label: `${selectedUserOption.name} (${selectedUserOption.username})` } : null}
+                onChange={(option) => setUserIdInput(option?.value ?? "")}
+                isDisabled={modalType === "edit"}
+                placeholder="Pilih user dengan role ustadz..."
+                classNamePrefix="react-select"
+                className="text-sm"
+                isClearable={false}
+              />
+              
+              {modalType === "create" && availableCreateUsers.length === 0 && (
+                <p className="mt-2 text-xs text-amber-600 bg-amber-50 p-2.5 rounded-xl border border-amber-100">
+                  Semua akun dengan role ustadz sudah didaftarkan ke halaqah. Silakan buat akun Pengguna (Ustadz) baru terlebih dahulu jika diperlukan.
                 </p>
               )}
             </div>
@@ -301,7 +310,7 @@ export default function UstadzPage() {
                 type="text"
                 value={specializationInput}
                 onChange={(e) => setSpecializationInput(e.target.value)}
-                placeholder="Masukkan spesialisasi"
+                placeholder="Masukkan spesialisasi (cth: Tahsin, Fiqih)"
                 className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-800 placeholder-gray-400"
               />
             </div>
@@ -330,8 +339,8 @@ export default function UstadzPage() {
             </button>
             <button
               type="submit"
-              disabled={submitLoading}
-              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-blue-500/10 cursor-pointer"
+              disabled={submitLoading || (modalType === "create" && availableCreateUsers.length === 0)}
+              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-blue-500/10 cursor-pointer"
             >
               {submitLoading ? "Memproses..." : "Simpan"}
             </button>

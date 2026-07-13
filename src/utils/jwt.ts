@@ -1,3 +1,4 @@
+import { RolesType } from "@/features/auth/types";
 import { SignJWT, jwtVerify } from "jose";
 
 const JWT_SECRET = new TextEncoder().encode(
@@ -7,7 +8,7 @@ const JWT_SECRET = new TextEncoder().encode(
 export async function signJWT(payload: {
   userId: number;
   username: string;
-  role: "admin" | "ustadz" | "santri";
+  role: RolesType;
 }) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
@@ -22,7 +23,7 @@ export async function verifyJWT(token: string) {
     return payload as {
       userId: number;
       username: string;
-      role: "admin" | "ustadz" | "santri";
+      role: RolesType;
       iat: number;
       exp: number;
     };

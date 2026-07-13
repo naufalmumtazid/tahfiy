@@ -1,25 +1,16 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/database/supabase/server";
-import { verifyJWT } from "@/utils/jwt";
+import { createClient } from "@/lib/database/supabase/server";
 import { getErrorMessage } from "@/utils/error";
+import { checkIsAuthorized } from "@/utils/auth"; // <-- Gunakan helper andalan proyekmu
 
-async function checkIsAdmin(): Promise<boolean> {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("auth_token")?.value;
-    if (!token) return false;
-    const payload = await verifyJWT(token);
-    return payload?.role === "admin";
-  } catch {
-    return false;
-  }
-}
+const ALLOWED_ROLES = ["admin", "ustadz"]; // Tentukan role apa saja yang diizinkan
 
 export async function GET() {
   try {
-    const isAdmin = await checkIsAdmin();
-    if (!isAdmin) {
+    // Validasi otorisasi menggunakan helper proyek
+    const isAuthorized = await checkIsAuthorized(ALLOWED_ROLES);
+    if (!isAuthorized) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
     }
 
@@ -35,31 +26,29 @@ export async function GET() {
 
     if (error) throw error;
 
-    type MurojaahRow = {
-      id: number;
-      santri_id: number;
-      date: string;
-      juz: number;
-      start_page: number;
-      end_page: number;
-      santri?: Array<{
-        class?: string;
-        halaqah?: Array<{ name?: string }>;
-        users?: Array<{ name?: string }>;
-      }>;
-    };
+    // Mapping super aman, tanpa memicu error linter any milik ESLint
+    const murojaah = ((murojaahData || []) as unknown[]).map((row) => {
+      const m = row as Record<string, unknown>;
+      const santri = Array.isArray(m.santri) ? m.santri[0] : (m.santri as Record<string, unknown> | undefined);
+      
+      const rawUser = santri?.users;
+      const userName = Array.isArray(rawUser) ? rawUser[0]?.name : (rawUser as Record<string, string> | undefined)?.name;
 
-    const murojaah = ((murojaahData || []) as MurojaahRow[]).map((m) => ({
-      id: m.id,
-      santri_id: m.santri_id,
-      date: m.date,
-      juz: m.juz,
-      start_page: m.start_page,
-      end_page: m.end_page,
-      name: m.santri?.[0]?.users?.[0]?.name ?? "",
-      class: m.santri?.[0]?.class || "",
-      halaqah_name: m.santri?.[0]?.halaqah?.[0]?.name || "",
-    }));
+      const rawHalaqah = santri?.halaqah;
+      const halaqahName = Array.isArray(rawHalaqah) ? rawHalaqah[0]?.name : (rawHalaqah as Record<string, string> | undefined)?.name;
+
+      return {
+        id: m.id as number,
+        santri_id: m.santri_id as number,
+        date: m.date as string,
+        juz: m.juz as number,
+        start_page: m.start_page as number,
+        end_page: m.end_page as number,
+        name: userName ?? "-",
+        class: (santri?.class as string) || "-",
+        halaqah_name: halaqahName ?? "-",
+      };
+    });
 
     return NextResponse.json({ murojaah });
   } catch (error: unknown) {
@@ -69,8 +58,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const isAdmin = await checkIsAdmin();
-    if (!isAdmin) {
+    // Validasi otorisasi menggunakan helper proyek
+    const isAuthorized = await checkIsAuthorized(ALLOWED_ROLES);
+    if (!isAuthorized) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
     }
 
@@ -88,11 +78,11 @@ export async function POST(request: Request) {
       .from("murojaah")
       .insert([
         {
-          santri_id: parseInt(santri_id, 10),
+          santri_id,   // Langsung panggil variabel murni (tidak perlu parseInt jika dari frontend sudah memakai z.coerce)
           date,
-          juz: parseInt(juz, 10),
-          start_page: parseInt(start_page, 10),
-          end_page: parseInt(end_page, 10),
+          juz,
+          start_page,
+          end_page,
         },
       ])
       .select("id, santri_id, date, juz, start_page, end_page, santri(id, class, halaqah(name), users(name))")
@@ -102,16 +92,26 @@ export async function POST(request: Request) {
       throw error || new Error("Failed to create murojaah.");
     }
 
+    // Ekstrak data tunggal baru hasil insert agar tipenya lolos sensor ESLint
+    const m = newMurojaah as Record<string, unknown>;
+    const santri = Array.isArray(m.santri) ? m.santri[0] : (m.santri as Record<string, unknown> | undefined);
+    
+    const rawUser = santri?.users;
+    const userName = Array.isArray(rawUser) ? rawUser[0]?.name : (rawUser as Record<string, string> | undefined)?.name;
+
+    const rawHalaqah = santri?.halaqah;
+    const halaqahName = Array.isArray(rawHalaqah) ? rawHalaqah[0]?.name : (rawHalaqah as Record<string, string> | undefined)?.name;
+
     const formatted = {
-      id: newMurojaah.id,
-      santri_id: newMurojaah.santri_id,
-      date: newMurojaah.date,
-      juz: newMurojaah.juz,
-      start_page: newMurojaah.start_page,
-      end_page: newMurojaah.end_page,
-      name: newMurojaah.santri?.[0]?.users?.[0]?.name ?? "",
-      class: newMurojaah.santri?.[0]?.class || "",
-      halaqah_name: newMurojaah.santri?.[0]?.halaqah?.[0]?.name || "",
+      id: m.id as number,
+      santri_id: m.santri_id as number,
+      date: m.date as string,
+      juz: m.juz as number,
+      start_page: m.start_page as number,
+      end_page: m.end_page as number,
+      name: userName ?? "-",
+      class: (santri?.class as string) || "-",
+      halaqah_name: halaqahName ?? "-",
     };
 
     return NextResponse.json({ murojaah: formatted }, { status: 201 });

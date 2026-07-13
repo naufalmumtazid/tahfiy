@@ -34,7 +34,7 @@ function LoginForm() {
         router.push(result.redirectTo);
         router.refresh();
       }
-    } catch (err) {
+    } catch {
       setError("Terjadi kesalahan sistem. Silakan coba lagi.");
       setLoading(false);
     }

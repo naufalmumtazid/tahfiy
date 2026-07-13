@@ -1,7 +1,4 @@
-export interface Halaqah {
-  id: number;
-  name: string;
-}
+import { Santri } from "@/features/santri/types";
 
 export interface Ziyadah {
   id: number;
@@ -11,6 +8,7 @@ export interface Ziyadah {
   halaqah_name: string;
   date: string;
   juz: number;
+  santri?: Santri;
   start_page: number;
   end_page: number;
 }

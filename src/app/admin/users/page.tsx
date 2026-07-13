@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Select from "react-select";
 import { FiUserPlus, FiEdit2, FiTrash2, FiSearch, FiAlertCircle } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Header from "@/components/Header";
@@ -78,6 +79,12 @@ export default function UserManagementPage() {
     setFormError(null);
     setIsModalOpen(true);
   };
+
+  const roleOptions = [
+    { value: "santri", label: "Santri" },
+    { value: "ustadz", label: "Ustadz" },
+    { value: "admin", label: "Admin" },
+  ] as const;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -311,20 +318,15 @@ export default function UserManagementPage() {
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                 Role / Hak Akses <span className="text-red-500">*</span>
               </label>
-              <select
-                value={roleInput}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (value === "admin" || value === "ustadz" || value === "santri") {
-                    setRoleInput(value);
-                  }
-                }}
-                className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-700 bg-white"
-              >
-                <option value="santri">Santri</option>
-                <option value="ustadz">Ustadz</option>
-                <option value="admin">Admin</option>
-              </select>
+              <Select
+                options={roleOptions}
+                value={roleOptions.find((option) => option.value === roleInput) ?? null}
+                onChange={(option) => setRoleInput(option?.value ?? "santri")}
+                placeholder="Pilih role..."
+                classNamePrefix="react-select"
+                className="text-sm"
+                isSearchable={false}
+              />
             </div>
 
             <div>

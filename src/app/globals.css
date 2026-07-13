@@ -37,6 +37,6 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-input, select {
+input, select, td {
   color: #171717;
 }

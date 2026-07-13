@@ -1,0 +1,16 @@
+# Global Tech Stack & Preferences
+- Operating System Focus: Linux/Ubuntu friendly paths and commands.
+- Language: TypeScript (strict mode enabled) for frontend/backend, PHP for specific legacy backend modules if explicitly requested.
+- Database: Always write optimized SQL queries. Avoid N+1 query problems by eager loading relationships.
+
+# Architecture & Code Style
+- Project Patterns: Follow Clean Architecture principles strictly. Keep separation of concerns between Layers (UI/Presentation, Domain/UseCases, Data/Repository).
+- File Organization: Keep folders highly organized and modular using a Feature-Based Structure (e.g., `src/features/feature-name/{components,hooks,repository,types}`). Avoid dumping generic utilities into a single monolithic file.
+- Naming Conventions: For React/Next.js Custom Hooks, strictly use the prefix `use` followed by PascalCase (e.g., `useGetProducts`, `useAuthUser`).
+- State Management & Caching: For Next.js projects, leverage Next.js App Router cache management effectively. Use Server Components by default, and use 'use client' only when interactive components require hooks.
+- Styling: Use clean, responsive design conventions (Tailwind CSS preferred). Do not use inline CSS styles.
+
+# AI Behavior Rules
+- Refactoring: When asked to refactor, ensure the code becomes more scalable and modular without breaking existing interfaces.
+- Response Language: Always reply and explain concepts in Indonesian, but keep the code, variables, and comments in professional English.
+- Output: Give direct, functional code solutions. Explain the "why" briefly after providing the code blocks.

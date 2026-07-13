@@ -1,20 +1,10 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/database/supabase/server";
-import { verifyJWT } from "@/utils/jwt";
+import { createClient } from "@/lib/database/supabase/server";
 import { getErrorMessage } from "@/utils/error";
+import { checkIsAuthorized } from "@/utils/auth"; // <-- Gunakan helper andalan proyekmu
 
-async function checkIsAdmin(): Promise<boolean> {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("auth_token")?.value;
-    if (!token) return false;
-    const payload = await verifyJWT(token);
-    return payload?.role === "admin";
-  } catch {
-    return false;
-  }
-}
+const ALLOWED_ROLES = ["admin", "ustadz"];
 
 export async function PUT(
   request: Request,
@@ -24,8 +14,9 @@ export async function PUT(
     const { id } = await params;
     const murojaahId = parseInt(id, 10);
 
-    const isAdmin = await checkIsAdmin();
-    if (!isAdmin) {
+    // Validasi otorisasi
+    const isAuthorized = await checkIsAuthorized(ALLOWED_ROLES);
+    if (!isAuthorized) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
     }
 
@@ -52,11 +43,11 @@ export async function PUT(
     const { data: updated, error } = await supabase
       .from("murojaah")
       .update({
-        santri_id: parseInt(santri_id, 10),
+        santri_id, // Ganti ke direct value karena dari RHF + Zod sudah berupa number asli
         date,
-        juz: parseInt(juz, 10),
-        start_page: parseInt(start_page, 10),
-        end_page: parseInt(end_page, 10),
+        juz,
+        start_page,
+        end_page,
       })
       .eq("id", murojaahId)
       .select("id, santri_id, date, juz, start_page, end_page, santri(id, class, halaqah(name), users(name))")
@@ -66,16 +57,26 @@ export async function PUT(
       throw error || new Error("Failed to update murojaah.");
     }
 
+    // Ekstrak data bertingkat menggunakan teknik Record<string, unknown> yang lolos sensor ESLint
+    const m = updated as Record<string, unknown>;
+    const santri = Array.isArray(m.santri) ? m.santri[0] : (m.santri as Record<string, unknown> | undefined);
+    
+    const rawUser = santri?.users;
+    const userName = Array.isArray(rawUser) ? rawUser[0]?.name : (rawUser as Record<string, string> | undefined)?.name;
+
+    const rawHalaqah = santri?.halaqah;
+    const halaqahName = Array.isArray(rawHalaqah) ? rawHalaqah[0]?.name : (rawHalaqah as Record<string, string> | undefined)?.name;
+
     const formatted = {
-      id: updated.id,
-      santri_id: updated.santri_id,
-      date: updated.date,
-      juz: updated.juz,
-      start_page: updated.start_page,
-      end_page: updated.end_page,
-      name: updated.santri?.[0]?.users?.[0]?.name ?? "",
-      class: updated.santri?.[0]?.class || "",
-      halaqah_name: updated.santri?.[0]?.halaqah?.[0]?.name || "",
+      id: m.id as number,
+      santri_id: m.santri_id as number,
+      date: m.date as string,
+      juz: m.juz as number,
+      start_page: m.start_page as number,
+      end_page: m.end_page as number,
+      name: userName ?? "-",
+      class: (santri?.class as string) || "-",
+      halaqah_name: halaqahName ?? "-",
     };
 
     return NextResponse.json({ murojaah: formatted });
@@ -92,8 +93,9 @@ export async function DELETE(
     const { id } = await params;
     const murojaahId = parseInt(id, 10);
 
-    const isAdmin = await checkIsAdmin();
-    if (!isAdmin) {
+    // Validasi otorisasi
+    const isAuthorized = await checkIsAuthorized(ALLOWED_ROLES);
+    if (!isAuthorized) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
     }
 

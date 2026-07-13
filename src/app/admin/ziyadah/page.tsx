@@ -1,14 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Select from "react-select";
 import { FiUserPlus, FiEdit2, FiTrash2, FiSearch, FiAlertCircle } from "react-icons/fi";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import Header from "@/components/Header";
 import Modal from "@/components/Modal";
-import { Halaqah, SantriOption, Ziyadah } from "@/types/ziyadah";
+import { SantriOption, Ziyadah } from "@/features/ziyadah/types";
 import { getErrorMessage } from "@/utils/error";
-import { ZiyadahFormValues, ziyadahSchema } from "@/schemas/ziyadah";
+import { ZiyadahFormValues, ziyadahSchema } from "@/features/ziyadah/schemas";
+import { Halaqah } from "@/features/halaqah/types";
+import { createZiyadah, deleteZiyadah, fetchHalaqahs, fetchSantriOptions, fetchZiyadah, updateZiyadah } from "@/features/ziyadah/repository";
 
 export default function ZiyadahPage() {
   const [ziyadah, setZiyadah] = useState<Ziyadah[]>([]);
@@ -29,6 +32,7 @@ export default function ZiyadahPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -42,16 +46,11 @@ export default function ZiyadahPage() {
     },
   });
 
-  const fetchZiyadah = async () => {
+  const fetchZiyadahData = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/ziyadah");
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Gagal memuat daftar ziyadah.");
-      }
-      const data = await response.json();
-      setZiyadah(data.ziyadah || []);
+      const data = await fetchZiyadah();
+      setZiyadah(data);
       setApiError(null);
     } catch (err: unknown) {
       setApiError(getErrorMessage(err));
@@ -60,25 +59,19 @@ export default function ZiyadahPage() {
     }
   };
 
-  const fetchHalaqahs = async () => {
+  const fetchHalaqahsData = async () => {
     try {
-      const response = await fetch("/api/halaqah");
-      if (response.ok) {
-        const data = await response.json();
-        setHalaqahs(data.halaqahs || []);
-      }
+      const data = await fetchHalaqahs();
+      setHalaqahs(data);
     } catch {
       // Silently fail – halaqah list is a convenience feature
     }
   };
 
-  const fetchSantriOptions = async () => {
+  const fetchSantriOptionsData = async () => {
     try {
-      const res = await fetch("/api/santri");
-      if (res.ok) {
-        const data = await res.json();
-        setSantriOptions(data.santri || []);
-      }
+      const data = await fetchSantriOptions();
+      setSantriOptions(data);
     } catch {
       // ignore
     }
@@ -86,7 +79,7 @@ export default function ZiyadahPage() {
 
   useEffect(() => {
     void (async () => {
-      await Promise.all([fetchZiyadah(), fetchHalaqahs(), fetchSantriOptions()]);
+      await Promise.all([fetchZiyadahData(), fetchHalaqahsData(), fetchSantriOptionsData()]);
     })();
   }, []);
 
@@ -130,8 +123,6 @@ export default function ZiyadahPage() {
     }
 
     try {
-      const url = modalType === "create" ? "/api/ziyadah" : `/api/ziyadah/${selectedZiyadah?.id}`;
-      const method = modalType === "create" ? "POST" : "PUT";
       const payload = {
         santri_id: result.data.santri_id,
         date: result.data.date,
@@ -140,19 +131,17 @@ export default function ZiyadahPage() {
         end_page: result.data.end_page,
       };
 
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Gagal memproses data.");
+      if (modalType === "create") {
+        await createZiyadah(payload);
+      } else if (selectedZiyadah) {
+        await updateZiyadah(selectedZiyadah.id, payload);
+      }
 
       setIsModalOpen(false);
       toast.success(
         modalType === "create" ? "Ziyadah baru berhasil ditambahkan!" : "Data ziyadah berhasil diperbarui!"
       );
-      fetchZiyadah();
+      fetchZiyadahData();
     } catch (err: unknown) {
       setFormError(getErrorMessage(err));
     } finally {
@@ -164,11 +153,9 @@ export default function ZiyadahPage() {
     if (!confirm(`Apakah Anda yakin ingin menghapus ziyadah "${ziyadah.name}"?`)) return;
 
     try {
-      const response = await fetch(`/api/ziyadah/${ziyadah.id}`, { method: "DELETE" });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Gagal menghapus ziyadah.");
+      await deleteZiyadah(ziyadah.id);
       toast.success(`Ziyadah "${ziyadah.name}" berhasil dihapus.`);
-      fetchZiyadah();
+      fetchZiyadahData();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     }
@@ -314,17 +301,23 @@ export default function ZiyadahPage() {
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                 Santri <span className="text-red-500">*</span>
               </label>
-              <select
-                {...register("santri_id", { valueAsNumber: true })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-700 bg-white"
-              >
-                <option value={0}>-- Pilih Santri --</option>
-                {santriOptions.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} — {s.class}
-                  </option>
-                ))}
-              </select>
+              <Controller
+                name="santri_id"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    options={santriOptions.map((s) => ({ value: s.id, label: `${s.name} — ${s.class}` }))}
+                    value={santriOptions
+                      .map((s) => ({ value: s.id, label: `${s.name} — ${s.class}` }))
+                      .find((option) => option.value === field.value) || null}
+                    onChange={(option) => field.onChange(option?.value ?? 0)}
+                    placeholder="Pilih Santri..."
+                    classNamePrefix="react-select"
+                    className="text-sm"
+                    isClearable={false}
+                  />
+                )}
+              />
               {errors.santri_id && (
                 <p className="mt-2 text-xs text-red-600">{errors.santri_id.message}</p>
               )}

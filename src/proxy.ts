@@ -6,12 +6,17 @@ export default async function proxy(request: NextRequest) {
   const token = request.cookies.get("auth_token")?.value;
   const { pathname } = request.nextUrl;
 
-  console.log(`[Proxy Src] Intercepted Request: ${pathname} | Token Present: ${!!token}`);
+  // console.log(`[Proxy Src] Intercepted Request: ${pathname} | Token Present: ${!!token}`);
 
-  // Protect admin routes
-  if (pathname.startsWith("/admin")) {
+  // 1. Tentukan rute-rute yang membutuhkan proteksi berbasis role
+  const isAdminRoute = pathname.startsWith("/admin");
+  const isUstadzRoute = pathname.startsWith("/ustadz");
+  const isSantriRoute = pathname.startsWith("/santri");
+
+  if (isAdminRoute || isUstadzRoute || isSantriRoute) {
+    // Jika tidak ada token, langsung lempar ke halaman login
     if (!token) {
-      console.log(`[Proxy Src] Redirecting to /login (no token found)`);
+      // console.log(`[Proxy Src] Redirecting to /login (no token found)`);
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("next", pathname);
       return NextResponse.redirect(loginUrl);
@@ -20,21 +25,37 @@ export default async function proxy(request: NextRequest) {
     const payload = await verifyJWT(token);
     console.log(`[Proxy Src] Token payload:`, payload);
 
-    if (!payload || payload.role !== "admin") {
-      console.log(`[Proxy Src] Redirecting to /login (invalid token or not admin)`);
+    // Jika token tidak valid, bersihkan atau lempar ke login dengan error
+    if (!payload) {
+      // console.log(`[Proxy Src] Redirecting to /login (invalid token)`);
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("error", "unauthorized");
       return NextResponse.redirect(loginUrl);
     }
+
+    // Validasi kecocokan Role dengan Rute yang diakses
+    if (isAdminRoute && payload.role !== "admin") {
+      return NextResponse.redirect(new URL("/login?error=unauthorized", request.url));
+    }
+    if (isUstadzRoute && payload.role !== "ustadz") {
+      return NextResponse.redirect(new URL("/login?error=unauthorized", request.url));
+    }
+    if (isSantriRoute && payload.role !== "santri") {
+      return NextResponse.redirect(new URL("/login?error=unauthorized", request.url));
+    }
   }
 
-  // Redirect authenticated admin users away from login page
+  // 2. Pengalihan otomatis jika user yang sudah login mengakses halaman /login
   if (pathname === "/login") {
     if (token) {
       const payload = await verifyJWT(token);
-      if (payload && payload.role === "admin") {
-        console.log(`[Proxy Src] Authenticated admin on /login, redirecting to /admin`);
-        return NextResponse.redirect(new URL("/admin", request.url));
+      if (payload && payload.role) {
+        console.log(`[Proxy Src] Authenticated user (${payload.role}) on /login, redirecting to dashboard`);
+        
+        // Arahkan ke dashboard masing-masing sesuai role-nya
+        if (payload.role === "admin") return NextResponse.redirect(new URL("/admin", request.url));
+        if (payload.role === "ustadz") return NextResponse.redirect(new URL("/ustadz", request.url));
+        if (payload.role === "santri") return NextResponse.redirect(new URL("/santri", request.url));
       }
     }
   }
@@ -43,5 +64,10 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/login"],
+  matcher: [
+    "/admin/:path*", 
+    "/ustadz/:path*", 
+    "/santri/:path*", 
+    "/login"
+  ],
 };

@@ -1,14 +1,24 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Select from "react-select";
 import { FiUserPlus, FiEdit2, FiTrash2, FiSearch, FiAlertCircle } from "react-icons/fi";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import Header from "@/components/Header";
 import Modal from "@/components/Modal";
 import { getErrorMessage } from "@/utils/error";
-import { Halaqah, Murojaah, SantriOption } from "@/types/murojaah";
-import { MurojaahFormValues, murojaahSchema } from "@/schemas/murojaah";
+import {
+  createMurojaah,
+  deleteMurojaah,
+  fetchHalaqahs,
+  fetchMurojaah,
+  fetchSantriOptions,
+  updateMurojaah,
+} from "@/features/murojaah/repository";
+import { Murojaah, SantriOption } from "@/features/murojaah/types";
+import { MurojaahFormValues, murojaahSchema } from "@/features/murojaah/schemas";
+import { Halaqah } from "@/features/halaqah/types";
 
 export default function MurojaahPage() {
   const [murojaah, setMurojaah] = useState<Murojaah[]>([]);
@@ -26,29 +36,25 @@ export default function MurojaahPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
   } = useForm<MurojaahFormValues>({
     defaultValues: {
       santri_id: 0,
-      date: "",
+      date: new Date().toISOString().split('T')[0],
       juz: 1,
       start_page: 1,
       end_page: 1,
     },
   });
 
-  const fetchMurojaah = async () => {
+  const fetchMurojaahData = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/murojaah");
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Gagal memuat daftar murojaah.");
-      }
-      const data = await response.json();
-      setMurojaah(data.murojaah || []);
+      const data = await fetchMurojaah();
+      setMurojaah(data);
       setApiError(null);
     } catch (err: unknown) {
       setApiError(getErrorMessage(err));
@@ -57,25 +63,19 @@ export default function MurojaahPage() {
     }
   };
 
-  const fetchHalaqahs = async () => {
+  const fetchHalaqahsData = async () => {
     try {
-      const response = await fetch("/api/halaqah");
-      if (response.ok) {
-        const data = await response.json();
-        setHalaqahs(data.halaqahs || []);
-      }
+      const data = await fetchHalaqahs();
+      setHalaqahs(data);
     } catch {
       // Silently fail
     }
   };
 
-  const fetchSantriOptions = async () => {
+  const fetchSantriOptionsData = async () => {
     try {
-      const res = await fetch("/api/santri");
-      if (res.ok) {
-        const data = await res.json();
-        setSantriOptions(data.santri || []);
-      }
+      const data = await fetchSantriOptions();
+      setSantriOptions(data);
     } catch {
       // ignore
     }
@@ -83,7 +83,7 @@ export default function MurojaahPage() {
 
   useEffect(() => {
     void (async () => {
-      await Promise.all([fetchMurojaah(), fetchHalaqahs(), fetchSantriOptions()]);
+      await Promise.all([fetchMurojaahData(), fetchHalaqahsData(), fetchSantriOptionsData()]);
     })();
   }, []);
 
@@ -92,7 +92,7 @@ export default function MurojaahPage() {
     setSelectedMurojaah(null);
     reset({
       santri_id: santriOptions[0]?.id ?? 0,
-      date: "",
+      date: new Date().toISOString().split('T')[0],
       juz: 1,
       start_page: 1,
       end_page: 1,
@@ -127,8 +127,6 @@ export default function MurojaahPage() {
     }
 
     try {
-      const url = modalType === "create" ? "/api/murojaah" : `/api/murojaah/${selectedMurojaah?.id}`;
-      const method = modalType === "create" ? "POST" : "PUT";
       const payload = {
         santri_id: result.data.santri_id,
         date: result.data.date,
@@ -137,19 +135,17 @@ export default function MurojaahPage() {
         end_page: result.data.end_page,
       };
 
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Gagal memproses data.");
+      if (modalType === "create") {
+        await createMurojaah(payload);
+      } else if (selectedMurojaah) {
+        await updateMurojaah(selectedMurojaah.id, payload);
+      }
 
       setIsModalOpen(false);
       toast.success(
         modalType === "create" ? "Murojaah baru berhasil ditambahkan!" : "Data murojaah berhasil diperbarui!"
       );
-      fetchMurojaah();
+      fetchMurojaahData();
     } catch (err: unknown) {
       setFormError(getErrorMessage(err));
     } finally {
@@ -161,11 +157,9 @@ export default function MurojaahPage() {
     if (!confirm(`Apakah Anda yakin ingin menghapus murojaah "${item.name}"?`)) return;
 
     try {
-      const response = await fetch(`/api/murojaah/${item.id}`, { method: "DELETE" });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Gagal menghapus murojaah.");
+      await deleteMurojaah(item.id);
       toast.success(`Murojaah "${item.name}" berhasil dihapus.`);
-      fetchMurojaah();
+      fetchMurojaahData();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     }
@@ -307,17 +301,23 @@ export default function MurojaahPage() {
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                 Santri <span className="text-red-500">*</span>
               </label>
-              <select
-                {...register("santri_id", { valueAsNumber: true })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-700 bg-white"
-              >
-                <option value={0}>-- Pilih Santri --</option>
-                {santriOptions.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} — {s.class}
-                  </option>
-                ))}
-              </select>
+              <Controller
+                name="santri_id"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    options={santriOptions.map((s) => ({ value: s.id, label: `${s.name} — ${s.class}` }))}
+                    value={santriOptions
+                      .map((s) => ({ value: s.id, label: `${s.name} — ${s.class}` }))
+                      .find((option) => option.value === field.value) || null}
+                    onChange={(option) => field.onChange(option?.value ?? 0)}
+                    placeholder="Pilih Santri..."
+                    classNamePrefix="react-select"
+                    className="text-sm"
+                    isClearable={false}
+                  />
+                )}
+              />
               {errors.santri_id && (
                 <p className="mt-2 text-xs text-red-600">{errors.santri_id.message}</p>
               )}

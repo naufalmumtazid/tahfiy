@@ -18,6 +18,7 @@ CREATE TABLE ustadz (
     user_id INTEGER NOT NULL UNIQUE, -- link to users table
     specialization VARCHAR(100), -- optional: bidang keahlian
     phone VARCHAR(20),
+    active BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -26,6 +27,7 @@ CREATE TABLE santri (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL UNIQUE, -- link to users table
     class VARCHAR(50) DEFAULT NULL, -- e.g., "7A", "8B", "9C", etc.
+    active BOOLEAN DEFAULT TRUE,
     halaqah_id INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     FOREIGN KEY (halaqah_id) REFERENCES halaqah(id) ON DELETE CASCADE

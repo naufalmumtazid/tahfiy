@@ -1,20 +1,53 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/database/supabase/server";
-import { verifyJWT } from "@/utils/jwt";
+import { createClient } from "@/lib/database/supabase/server";
 import { getErrorMessage } from "@/utils/error";
+import { checkIsAuthorized } from "@/utils/auth";
 
-async function checkIsAdmin(): Promise<boolean> {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("auth_token")?.value;
-    if (!token) return false;
-    const payload = await verifyJWT(token);
-    return payload?.role === "admin";
-  } catch {
-    return false;
-  }
+interface SupabaseZiyadahRow {
+  id: number;
+  santri_id: number;
+  date: string;
+  juz: number;
+  start_page: number;
+  end_page: number;
+  santri?: Array<{
+    class?: string;
+    halaqah?: Array<{ name?: string }>;
+    users?: Array<{ name?: string }>;
+  }>;
 }
+
+interface FormattedZiyadah {
+  id: number;
+  santri_id: number;
+  date: string;
+  juz: number;
+  start_page: number;
+  end_page: number;
+  name: string;
+  class: string;
+  halaqah_name: string;
+}
+
+function formatZiyadahResponse(data: SupabaseZiyadahRow): FormattedZiyadah {
+  const targetSantri = data.santri?.[0];
+  
+  return {
+    id: data.id,
+    santri_id: data.santri_id,
+    date: data.date,
+    juz: data.juz,
+    start_page: data.start_page,
+    end_page: data.end_page,
+    name: targetSantri?.users?.[0]?.name ?? "",
+    class: targetSantri?.class ?? "",
+    halaqah_name: targetSantri?.halaqah?.[0]?.name ?? "",
+  };
+}
+
+// Definisikan role staf yang memiliki akses
+const ALLOWED_ROLES = ["admin", "ustadz"];
 
 export async function PUT(
   request: Request,
@@ -24,8 +57,9 @@ export async function PUT(
     const { id } = await params;
     const ziyadahId = parseInt(id, 10);
 
-    const isAdmin = await checkIsAdmin();
-    if (!isAdmin) {
+    // Menggunakan fungsi otentikasi reusable baru
+    const isAuthorized = await checkIsAuthorized(ALLOWED_ROLES);
+    if (!isAuthorized) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
     }
 
@@ -66,17 +100,9 @@ export async function PUT(
       throw error || new Error("Failed to update ziyadah.");
     }
 
-    const formatted = {
-      id: updated.id,
-      santri_id: updated.santri_id,
-      date: updated.date,
-      juz: updated.juz,
-      start_page: updated.start_page,
-      end_page: updated.end_page,
-      name: updated.santri?.[0]?.users?.[0]?.name ?? "",
-      class: updated.santri?.[0]?.class || "",
-      halaqah_name: updated.santri?.[0]?.halaqah?.[0]?.name || "",
-    };
+    // Lakukan type casting yang aman ke interface SupabaseZiyadahRow sebelum diformat
+    const rawUpdated = updated as unknown as SupabaseZiyadahRow;
+    const formatted = formatZiyadahResponse(rawUpdated);
 
     return NextResponse.json({ ziyadah: formatted });
   } catch (error: unknown) {
@@ -92,8 +118,9 @@ export async function DELETE(
     const { id } = await params;
     const ziyadahId = parseInt(id, 10);
 
-    const isAdmin = await checkIsAdmin();
-    if (!isAdmin) {
+    // Menggunakan fungsi otentikasi reusable baru
+    const isAuthorized = await checkIsAuthorized(ALLOWED_ROLES);
+    if (!isAuthorized) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
     }
 
