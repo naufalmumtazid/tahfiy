@@ -26,6 +26,7 @@ interface SidebarItemType {
 const adminMenuItems: SidebarItemType[] = [
     { id: "dashboard", label: "Dashboard", icon: MdDashboard, href: "/admin" },
     { id: "halaqah", label: "Halaqah", icon: MdOutlineNotes, href: "/admin/halaqah" },
+    { id: "santri", label: "Santri", icon: MdPeople, href: "/admin/santri" },
     { id: "ustadz", label: "Ustadz", icon: MdPeople, href: "/admin/ustadz" },
     { id: "users", label: "Users", icon: FiUsers, href: "/admin/users" },
 ];

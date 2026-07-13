@@ -5,13 +5,15 @@ import { FiAlertCircle, FiSearch, FiUserPlus } from "react-icons/fi";
 import Header from "@/components/Header";
 import { useHalaqahManagement } from "../hooks/useHalaqahManagement";
 import { HalaqahFormModal } from "./HalaqahFormModal";
+import { getCurrentUser, type AuthUser } from "@/actions/auth";
 import { HalaqahCard } from "./HalaqahCard";
 
 export function HalaqahManagementPage() {
+  const [user, setUser] = React.useState<AuthUser | null>(null);
   const {
     halaqahs,
     ustadzOptions,
-    loading,
+    loading: dataLoading,
     error,
     searchQuery,
     setSearchQuery,
@@ -26,6 +28,20 @@ export function HalaqahManagementPage() {
     handleHalaqahSubmit,
     handleDeleteHalaqah,
   } = useHalaqahManagement();
+
+  // Gabungkan status loading data & loading check session token
+  const pageLoading = dataLoading;
+  
+  let canManage = user?.role === "admin";
+
+  // Konfigurasi dinamis feature-based berdasarkan status role user
+    React.useEffect(() => {
+        getCurrentUser().then((res) => {
+            if (res) {
+                setUser(res);
+            }
+        });
+    }, []);
 
   return (
     <>
@@ -42,10 +58,14 @@ export function HalaqahManagementPage() {
               className="w-full rounded-2xl border border-gray-200 bg-gray-50/50 py-3 pl-12 pr-4 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
-          <button onClick={openCreateHalaqah} className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 cursor-pointer">
-            <FiUserPlus className="h-4 w-4" />
-            Tambah Halaqah
-          </button>
+
+          {/* 💡 Tombol Tambah Halaqah hanya merender jika user adalah ADMIN */}
+          {canManage && (
+            <button onClick={openCreateHalaqah} className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 cursor-pointer hover:bg-blue-700 transition">
+              <FiUserPlus className="h-4 w-4" />
+              Tambah Halaqah
+            </button>
+          )}
         </div>
 
         {error && (
@@ -59,7 +79,7 @@ export function HalaqahManagementPage() {
         )}
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {loading
+          {pageLoading
             ? Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-40 animate-pulse rounded-2xl border border-blue-50 bg-gray-50" />)
             : halaqahs.length === 0
               ? <div className="col-span-full py-10 text-center text-gray-400">Tidak ada data halaqah ditemukan.</div>
@@ -67,6 +87,8 @@ export function HalaqahManagementPage() {
                   <HalaqahCard
                     key={item.id}
                     item={item}
+                    baseUrl={`/${user?.role?.toLowerCase()}`} // 👈 Path tujuan link dinamis (/admin, /ustadz, /santri)
+                    canManage={canManage} 
                     onEdit={openEditHalaqah}
                     onDelete={handleDeleteHalaqah}
                   />

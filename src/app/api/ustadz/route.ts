@@ -4,7 +4,7 @@ import { createClient } from "@/lib/database/supabase/server";
 import { getErrorMessage } from "@/utils/error";
 import { checkIsAuthorized } from "@/utils/auth";
 
-const ALLOWED_ROLES = ["admin"];
+const ALLOWED_ROLES = ["admin", "ustadz"];
 
 export async function GET() {
   try {
