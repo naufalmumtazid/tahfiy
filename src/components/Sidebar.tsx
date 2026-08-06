@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { FiBookOpen, FiLogOut, FiUsers, FiX } from "react-icons/fi";
+import { FiLogOut, FiUsers, FiX } from "react-icons/fi";
 import { MdDashboard, MdPeople, MdOutlineNotes } from "react-icons/md";
 import { getCurrentUser, logoutAction, type AuthUser } from "@/actions/auth";
 import logoImg from "@/assets/logo.png";

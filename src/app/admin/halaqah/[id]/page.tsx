@@ -129,8 +129,8 @@ export default function HalaqahDetailPage() {
   });
 
   // Load All Data
+// Load All Data
   const loadData = useCallback(async () => {
-    setLoading(true);
     setError(null);
     try {
       const [allHalaqahs, santriList, allZiyadah, allMurojaah] = await Promise.all([
@@ -162,9 +162,19 @@ export default function HalaqahDetailPage() {
   }, [halaqahId]);
 
   useEffect(() => {
+    let active = true;
+
     if (halaqahId) {
-      void loadData();
+      const execute = async () => {
+        if (active) setLoading(true);
+        await loadData();
+      };
+      void execute();
     }
+
+    return () => {
+      active = false;
+    };
   }, [halaqahId, loadData]);
 
   // --- Santri CRUD Handlers ---

@@ -96,6 +96,7 @@ export default function HalaqahDetailPage() {
   const [murojaahFormError, setMurojaahFormError] = useState<string | null>(null);
 
   // React Hook Forms for Ziyadah & Murojaah
+  // React Hook Forms for Ziyadah & Murojaah
   const {
     register: registerZiyadah,
     control: controlZiyadah,
@@ -109,6 +110,10 @@ export default function HalaqahDetailPage() {
       surat: 1,
       ayat_mulai: 1,
       ayat_selesai: 1,
+    },
+  });
+
+  const {
     register: registerMurojaah,
     control: controlMurojaah,
     handleSubmit: handleSubmitMurojaah,
@@ -124,10 +129,8 @@ export default function HalaqahDetailPage() {
     },
   });
 
-  // Load All Data
+  // Reusable fetcher for manual refreshes (e.g., after submit/delete)
   const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const [allHalaqahs, santriList, allZiyadah, allMurojaah] = await Promise.all([
         fetchHalaqahs(),
@@ -157,10 +160,28 @@ export default function HalaqahDetailPage() {
     }
   }, [halaqahId]);
 
+  // Handle initial data loading inside effect without triggering synchronous state updates
   useEffect(() => {
-    if (halaqahId) {
-      void loadData();
-    }
+    if (!halaqahId) return;
+
+    let isMounted = true;
+
+    const initLoad = async () => {
+      setLoading(true);
+      setError(null);
+      await loadData();
+    };
+
+    // Execute via microtask boundary to prevent cascading render warnings
+    queueMicrotask(() => {
+      if (isMounted) {
+        void initLoad();
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, [halaqahId, loadData]);
 
   // --- Santri CRUD Handlers ---

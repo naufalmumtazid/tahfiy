@@ -32,7 +32,7 @@ export function HalaqahManagementPage() {
   // Gabungkan status loading data & loading check session token
   const pageLoading = dataLoading;
   
-  let canManage = user?.role === "admin";
+  const canManage = user?.role === "admin";
 
   // Konfigurasi dinamis feature-based berdasarkan status role user
     React.useEffect(() => {
