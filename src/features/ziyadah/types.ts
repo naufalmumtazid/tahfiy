@@ -7,10 +7,10 @@ export interface Ziyadah {
   class: string;
   halaqah_name: string;
   date: string;
-  juz: number;
+  surat: number;
   santri?: Santri;
-  start_page: number;
-  end_page: number;
+  ayat_mulai: number;
+  ayat_selesai: number;
 }
 
 export interface SantriOption {

@@ -5,9 +5,9 @@ export interface Murojaah {
   class: string;
   halaqah_name: string;
   date: string;
-  juz: number;
-  start_page: number;
-  end_page: number;
+  surat: number;
+  ayat_mulai: number;
+  ayat_selesai: number;
 }
 
 export interface SantriOption {

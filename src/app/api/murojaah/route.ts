@@ -20,7 +20,7 @@ export async function GET() {
     const { data: murojaahData, error } = await supabase
       .from("murojaah")
       .select(
-        `id, santri_id, date, juz, start_page, end_page, santri(id, class, halaqah(name), users(name))`
+        `id, santri_id, date, surat, ayat_mulai, ayat_selesai, santri(id, class, halaqah(name), users(name))`
       )
       .order("id", { ascending: true });
 
@@ -41,9 +41,9 @@ export async function GET() {
         id: m.id as number,
         santri_id: m.santri_id as number,
         date: m.date as string,
-        juz: m.juz as number,
-        start_page: m.start_page as number,
-        end_page: m.end_page as number,
+        surat: m.surat as number,
+        ayat_mulai: m.ayat_mulai as number,
+        ayat_selesai: m.ayat_selesai as number,
         name: userName ?? "-",
         class: (santri?.class as string) || "-",
         halaqah_name: halaqahName ?? "-",
@@ -65,9 +65,9 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { santri_id, date, juz, start_page, end_page } = body;
+    const { santri_id, date, surat, ayat_mulai, ayat_selesai } = body;
 
-    if (!santri_id || !date || !juz || !start_page || !end_page) {
+    if (!santri_id || !date || !surat || !ayat_mulai || !ayat_selesai) {
       return NextResponse.json({ error: "Semua field wajib diisi." }, { status: 400 });
     }
 
@@ -80,12 +80,12 @@ export async function POST(request: Request) {
         {
           santri_id,   // Langsung panggil variabel murni (tidak perlu parseInt jika dari frontend sudah memakai z.coerce)
           date,
-          juz,
-          start_page,
-          end_page,
+          surat,
+          ayat_mulai,
+          ayat_selesai,
         },
       ])
-      .select("id, santri_id, date, juz, start_page, end_page, santri(id, class, halaqah(name), users(name))")
+      .select("id, santri_id, date, surat, ayat_mulai, ayat_selesai, santri(id, class, halaqah(name), users(name))")
       .single();
 
     if (error || !newMurojaah) {
@@ -106,9 +106,9 @@ export async function POST(request: Request) {
       id: m.id as number,
       santri_id: m.santri_id as number,
       date: m.date as string,
-      juz: m.juz as number,
-      start_page: m.start_page as number,
-      end_page: m.end_page as number,
+      surat: m.surat as number,
+      ayat_mulai: m.ayat_mulai as number,
+      ayat_selesai: m.ayat_selesai as number,
       name: userName ?? "-",
       class: (santri?.class as string) || "-",
       halaqah_name: halaqahName ?? "-",

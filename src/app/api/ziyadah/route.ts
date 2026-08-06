@@ -20,9 +20,9 @@ function formatZiyadahResponse(data: unknown): Ziyadah {
     id: Number(d.id),
     santri_id: Number(d.santri_id),
     date: String(d.date),
-    juz: Number(d.juz),
-    start_page: Number(d.start_page),
-    end_page: Number(d.end_page),
+    surat: Number(d.surat),
+    ayat_mulai: Number(d.ayat_mulai),
+    ayat_selesai: Number(d.ayat_selesai),
     name: userName ?? "-",
     class: String(targetSantri?.class ?? "-"),
     halaqah_name: String(halaqahName ?? "-"),
@@ -44,7 +44,7 @@ export async function GET() {
     const { data: ziyadahData, error } = await supabase
       .from("ziyadah")
       .select(
-        `id, santri_id, date, juz, start_page, end_page, santri(id, class, halaqah(name), users(name))`
+        `id, santri_id, date, surat, ayat_mulai, ayat_selesai, santri(id, class, halaqah(name), users(name))`
       )
       .order("id", { ascending: true });
 
@@ -68,9 +68,9 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { santri_id, date, juz, start_page, end_page } = body;
+    const { santri_id, date, surat, ayat_mulai, ayat_selesai } = body;
 
-    if (!santri_id || !date || !juz || !start_page || !end_page) {
+    if (!santri_id || !date || !surat || !ayat_mulai || !ayat_selesai) {
       return NextResponse.json({ error: "Semua field wajib diisi." }, { status: 400 });
     }
 
@@ -79,8 +79,8 @@ export async function POST(request: Request) {
 
     const { data: newZiyadah, error } = await supabase
       .from("ziyadah")
-      .insert([{ santri_id, date, juz, start_page, end_page }])
-      .select("id, santri_id, date, juz, start_page, end_page, santri(id, class, halaqah(name), users(name))")
+      .insert([{ santri_id, date, surat, ayat_mulai, ayat_selesai }])
+      .select("id, santri_id, date, surat, ayat_mulai, ayat_selesai, santri(id, class, halaqah(name), users(name))")
       .single();
 
     if (error || !newZiyadah) {

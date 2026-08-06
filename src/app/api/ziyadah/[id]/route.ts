@@ -8,9 +8,9 @@ interface SupabaseZiyadahRow {
   id: number;
   santri_id: number;
   date: string;
-  juz: number;
-  start_page: number;
-  end_page: number;
+  surat: number;
+  ayat_mulai: number;
+  ayat_selesai: number;
   santri?: Array<{
     class?: string;
     halaqah?: Array<{ name?: string }>;
@@ -22,9 +22,9 @@ interface FormattedZiyadah {
   id: number;
   santri_id: number;
   date: string;
-  juz: number;
-  start_page: number;
-  end_page: number;
+  surat: number;
+  ayat_mulai: number;
+  ayat_selesai: number;
   name: string;
   class: string;
   halaqah_name: string;
@@ -37,9 +37,9 @@ function formatZiyadahResponse(data: SupabaseZiyadahRow): FormattedZiyadah {
     id: data.id,
     santri_id: data.santri_id,
     date: data.date,
-    juz: data.juz,
-    start_page: data.start_page,
-    end_page: data.end_page,
+    surat: data.surat,
+    ayat_mulai: data.ayat_mulai,
+    ayat_selesai: data.ayat_selesai,
     name: targetSantri?.users?.[0]?.name ?? "",
     class: targetSantri?.class ?? "",
     halaqah_name: targetSantri?.halaqah?.[0]?.name ?? "",
@@ -64,9 +64,9 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { santri_id, date, juz, start_page, end_page } = body;
+    const { santri_id, date, surat, ayat_mulai, ayat_selesai } = body;
 
-    if (!santri_id || !date || !juz || !start_page || !end_page) {
+    if (!santri_id || !date || !surat || !ayat_mulai || !ayat_selesai) {
       return NextResponse.json({ error: "Semua field wajib diisi." }, { status: 400 });
     }
 
@@ -88,12 +88,12 @@ export async function PUT(
       .update({
         santri_id: parseInt(santri_id, 10),
         date,
-        juz: parseInt(juz, 10),
-        start_page: parseInt(start_page, 10),
-        end_page: parseInt(end_page, 10),
+        surat: parseInt(surat, 10),
+        ayat_mulai: parseInt(ayat_mulai, 10),
+        ayat_selesai: parseInt(ayat_selesai, 10),
       })
       .eq("id", ziyadahId)
-      .select("id, santri_id, date, juz, start_page, end_page, santri(id, class, halaqah(name), users(name))")
+      .select("id, santri_id, date, surat, ayat_mulai, ayat_selesai, santri(id, class, halaqah(name), users(name))")
       .single();
 
     if (error || !updated) {

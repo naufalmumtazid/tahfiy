@@ -66,9 +66,9 @@ export function useZiyadahManagement() {
   const onSubmit = useCallback(async (values: {
     santri_id: number;
     date: string;
-    juz: number;
-    start_page: number;
-    end_page: number;
+    surat: number;
+    ayat_mulai: number;
+    ayat_selesai: number;
   }) => {
     setFormError(null);
     setSubmitLoading(true);

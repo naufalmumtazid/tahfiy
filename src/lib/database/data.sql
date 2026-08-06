@@ -46,9 +46,9 @@ CREATE TABLE ziyadah (
     id SERIAL PRIMARY KEY,
     santri_id INTEGER NOT NULL,
     date DATE NOT NULL,
-    juz INTEGER NOT NULL, -- Quranic juz (1-30)
-    start_page INTEGER NOT NULL,
-    end_page INTEGER NOT NULL,
+    surat INTEGER NOT NULL, -- Quranic surat (1-114)
+    ayat_mulai INTEGER NOT NULL,
+    ayat_selesai INTEGER NOT NULL,
     FOREIGN KEY (santri_id) REFERENCES santri(id) ON DELETE CASCADE
 );
 
@@ -57,8 +57,8 @@ CREATE TABLE murajaah (
     id SERIAL PRIMARY KEY,
     santri_id INTEGER NOT NULL,
     date DATE NOT NULL,
-    juz INTEGER NOT NULL, -- Quranic juz (1-30)
-    start_page INTEGER NOT NULL,
-    end_page INTEGER NOT NULL,
+    surat INTEGER NOT NULL, -- Quranic surat (1-114)
+    ayat_mulai INTEGER NOT NULL,
+    ayat_selesai INTEGER NOT NULL,
     FOREIGN KEY (santri_id) REFERENCES santri(id) ON DELETE CASCADE
 );

@@ -7,22 +7,22 @@ export const murojaahSchema = z
       z.number().int().positive({ message: "Pilih santri terlebih dahulu" })
     ),
     date: z.string().nonempty({ message: "Tanggal wajib diisi" }),
-    juz: z.preprocess(
+    surat: z.preprocess(
       (value) => Number(value),
-      z.number().int().min(1, { message: "Juz wajib diisi" }).max(30, { message: "Juz tidak boleh lebih dari 30" })
+      z.number().int().min(1, { message: "Surat wajib diisi" }).max(114, { message: "Surat tidak boleh lebih dari 114" })
     ),
-    start_page: z.preprocess(
+    ayat_mulai: z.preprocess(
       (value) => Number(value),
-      z.number().int().positive({ message: "Halaman mulai wajib diisi" })
+      z.number().int().positive({ message: "Ayat mulai wajib diisi" })
     ),
-    end_page: z.preprocess(
+    ayat_selesai: z.preprocess(
       (value) => Number(value),
-      z.number().int().positive({ message: "Halaman selesai wajib diisi" })
+      z.number().int().positive({ message: "Ayat selesai wajib diisi" })
     ),
   })
-  .refine((data) => data.end_page >= data.start_page, {
-    message: "Halaman selesai harus lebih besar atau sama dengan halaman mulai",
-    path: ["end_page"],
+  .refine((data) => data.ayat_selesai >= data.ayat_mulai, {
+    message: "Ayat selesai harus lebih besar atau sama dengan ayat mulai",
+    path: ["ayat_selesai"],
   });
 
 export type MurojaahFormValues = z.infer<typeof murojaahSchema>;

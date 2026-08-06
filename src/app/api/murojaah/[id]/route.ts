@@ -21,9 +21,9 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { santri_id, date, juz, start_page, end_page } = body;
+    const { santri_id, date, surat, ayat_mulai, ayat_selesai } = body;
 
-    if (!santri_id || !date || !juz || !start_page || !end_page) {
+    if (!santri_id || !date || !surat || !ayat_mulai || !ayat_selesai) {
       return NextResponse.json({ error: "Semua field wajib diisi." }, { status: 400 });
     }
 
@@ -45,12 +45,12 @@ export async function PUT(
       .update({
         santri_id, // Ganti ke direct value karena dari RHF + Zod sudah berupa number asli
         date,
-        juz,
-        start_page,
-        end_page,
+        surat,
+        ayat_mulai,
+        ayat_selesai,
       })
       .eq("id", murojaahId)
-      .select("id, santri_id, date, juz, start_page, end_page, santri(id, class, halaqah(name), users(name))")
+      .select("id, santri_id, date, surat, ayat_mulai, ayat_selesai, santri(id, class, halaqah(name), users(name))")
       .single();
 
     if (error || !updated) {
@@ -71,9 +71,9 @@ export async function PUT(
       id: m.id as number,
       santri_id: m.santri_id as number,
       date: m.date as string,
-      juz: m.juz as number,
-      start_page: m.start_page as number,
-      end_page: m.end_page as number,
+      surat: m.surat as number,
+      ayat_mulai: m.ayat_mulai as number,
+      ayat_selesai: m.ayat_selesai as number,
       name: userName ?? "-",
       class: (santri?.class as string) || "-",
       halaqah_name: halaqahName ?? "-",

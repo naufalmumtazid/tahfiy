@@ -20,6 +20,7 @@ import Header from "@/components/Header";
 import DataTable from "@/components/DataTable";
 import Modal from "@/components/Modal";
 import { getErrorMessage } from "@/utils/error";
+import { getSuratName, suratOptions } from "@/utils/surat";
 
 // Halaqah Imports
 import { SantriFormModal } from "@/features/halaqah/components/SantriFormModal";
@@ -105,13 +106,9 @@ export default function HalaqahDetailPage() {
     defaultValues: {
       santri_id: 0,
       date: new Date().toISOString().split("T")[0],
-      juz: 1,
-      start_page: 1,
-      end_page: 1,
-    },
-  });
-
-  const {
+      surat: 1,
+      ayat_mulai: 1,
+      ayat_selesai: 1,
     register: registerMurojaah,
     control: controlMurojaah,
     handleSubmit: handleSubmitMurojaah,
@@ -121,9 +118,9 @@ export default function HalaqahDetailPage() {
     defaultValues: {
       santri_id: 0,
       date: new Date().toISOString().split("T")[0],
-      juz: 1,
-      start_page: 1,
-      end_page: 1,
+      surat: 1,
+      ayat_mulai: 1,
+      ayat_selesai: 1,
     },
   });
 
@@ -222,9 +219,9 @@ export default function HalaqahDetailPage() {
     resetZiyadah({
       santri_id: santri[0]?.id ?? 0,
       date: new Date().toISOString().split("T")[0],
-      juz: 1,
-      start_page: 1,
-      end_page: 1,
+      surat: 1,
+      ayat_mulai: 1,
+      ayat_selesai: 1,
     });
     setZiyadahFormError(null);
     setIsZiyadahModalOpen(true);
@@ -236,9 +233,9 @@ export default function HalaqahDetailPage() {
     resetZiyadah({
       santri_id: item.santri_id,
       date: item.date,
-      juz: item.juz,
-      start_page: item.start_page,
-      end_page: item.end_page,
+      surat: item.surat,
+      ayat_mulai: item.ayat_mulai,
+      ayat_selesai: item.ayat_selesai,
     });
     setZiyadahFormError(null);
     setIsZiyadahModalOpen(true);
@@ -259,9 +256,9 @@ export default function HalaqahDetailPage() {
       const payload = {
         santri_id: result.data.santri_id,
         date: result.data.date,
-        juz: result.data.juz,
-        start_page: result.data.start_page,
-        end_page: result.data.end_page,
+        surat: result.data.surat,
+        ayat_mulai: result.data.ayat_mulai,
+        ayat_selesai: result.data.ayat_selesai,
       };
 
       if (ziyadahModalMode === "create") {
@@ -304,9 +301,9 @@ export default function HalaqahDetailPage() {
     resetMurojaah({
       santri_id: santri[0]?.id ?? 0,
       date: new Date().toISOString().split("T")[0],
-      juz: 1,
-      start_page: 1,
-      end_page: 1,
+      surat: 1,
+      ayat_mulai: 1,
+      ayat_selesai: 1,
     });
     setMurojaahFormError(null);
     setIsMurojaahModalOpen(true);
@@ -318,9 +315,9 @@ export default function HalaqahDetailPage() {
     resetMurojaah({
       santri_id: item.santri_id,
       date: item.date,
-      juz: item.juz,
-      start_page: item.start_page,
-      end_page: item.end_page,
+      surat: item.surat,
+      ayat_mulai: item.ayat_mulai,
+      ayat_selesai: item.ayat_selesai,
     });
     setMurojaahFormError(null);
     setIsMurojaahModalOpen(true);
@@ -341,9 +338,9 @@ export default function HalaqahDetailPage() {
       const payload = {
         santri_id: result.data.santri_id,
         date: result.data.date,
-        juz: result.data.juz,
-        start_page: result.data.start_page,
-        end_page: result.data.end_page,
+        surat: result.data.surat,
+        ayat_mulai: result.data.ayat_mulai,
+        ayat_selesai: result.data.ayat_selesai,
       };
 
       if (murojaahModalMode === "create") {
@@ -485,9 +482,9 @@ export default function HalaqahDetailPage() {
             </div>
             <div>
               <p className={`text-xs font-semibold uppercase tracking-wider ${activeTab === "murojaah" ? "text-blue-100" : "text-gray-400"}`}>
-                Murojaah Hafalan
+                Tsunayyah Hafalan
               </p>
-              <h4 className="text-lg font-bold mt-0.5">Menu Murojaah</h4>
+              <h4 className="text-lg font-bold mt-0.5">Menu Tsunayyah</h4>
             </div>
           </div>
         </button>
@@ -558,10 +555,10 @@ export default function HalaqahDetailPage() {
             { header: "Kelas", accessorKey: "class" },
             { header: "Tanggal", accessorKey: "date" },
             {
-              header: "Juz / Halaman",
+              header: "Surat / Ayat",
               cell: ({ row }) => (
                 <span>
-                  Juz {row.original.juz} (Hal. {row.original.start_page}-{row.original.end_page})
+                  Surat {row.original.surat}: {getSuratName(row.original.surat)} (Ayat {row.original.ayat_mulai}-{row.original.ayat_selesai})
                 </span>
               ),
             },
@@ -609,10 +606,10 @@ export default function HalaqahDetailPage() {
             { header: "Kelas", accessorKey: "class" },
             { header: "Tanggal", accessorKey: "date" },
             {
-              header: "Juz / Halaman",
+              header: "Surat / Ayat",
               cell: ({ row }) => (
                 <span>
-                  Juz {row.original.juz} (Hal. {row.original.start_page}-{row.original.end_page})
+                  Surat {row.original.surat}: {getSuratName(row.original.surat)} (Ayat {row.original.ayat_mulai}-{row.original.ayat_selesai})
                 </span>
               ),
             },
@@ -623,14 +620,14 @@ export default function HalaqahDetailPage() {
                   <button
                     onClick={() => openEditMurojaah(row.original)}
                     className="rounded-xl p-2 text-blue-600 hover:bg-blue-50 transition cursor-pointer"
-                    title="Edit Murojaah"
+                    title="Edit Tsunayyah"
                   >
                     <FiEdit2 className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteMurojaah(row.original)}
                     className="rounded-xl p-2 text-red-500 hover:bg-red-50 transition cursor-pointer"
-                    title="Hapus Murojaah"
+                    title="Hapus Tsunayyah"
                   >
                     <FiTrash2 className="h-4 w-4" />
                   </button>
@@ -639,14 +636,14 @@ export default function HalaqahDetailPage() {
             },
           ]}
           data={murojaahList}
-          placeholderSearch="Cari murojaah..."
+          placeholderSearch="Cari tsunayyah..."
           renderTopActions={() => (
             <button
               onClick={openCreateMurojaah}
               className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 cursor-pointer hover:bg-blue-700 transition active:scale-95 shrink-0"
             >
               <FiUserPlus className="h-4 w-4" />
-              Tambah Murojaah
+              Tambah Tsunayyah
             </button>
           )}
         />
@@ -721,17 +718,20 @@ export default function HalaqahDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  Juz <span className="text-red-500">*</span>
+                  Surat <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={30}
-                  {...registerZiyadah("juz", { valueAsNumber: true })}
+                <select
+                  {...registerZiyadah("surat", { valueAsNumber: true })}
                   className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-800"
-                />
-                {errorsZiyadah.juz && (
-                  <p className="mt-2 text-xs text-red-600">{errorsZiyadah.juz.message}</p>
+                >
+                  {suratOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {errorsZiyadah.surat && (
+                  <p className="mt-2 text-xs text-red-600">{errorsZiyadah.surat.message}</p>
                 )}
               </div>
               <div>
@@ -741,11 +741,11 @@ export default function HalaqahDetailPage() {
                 <input
                   type="number"
                   min={1}
-                  {...registerZiyadah("start_page", { valueAsNumber: true })}
+                  {...registerZiyadah("ayat_mulai", { valueAsNumber: true })}
                   className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-800"
                 />
-                {errorsZiyadah.start_page && (
-                  <p className="mt-2 text-xs text-red-600">{errorsZiyadah.start_page.message}</p>
+                {errorsZiyadah.ayat_mulai && (
+                  <p className="mt-2 text-xs text-red-600">{errorsZiyadah.ayat_mulai.message}</p>
                 )}
               </div>
               <div>
@@ -755,11 +755,11 @@ export default function HalaqahDetailPage() {
                 <input
                   type="number"
                   min={1}
-                  {...registerZiyadah("end_page", { valueAsNumber: true })}
+                  {...registerZiyadah("ayat_selesai", { valueAsNumber: true })}
                   className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-800"
                 />
-                {errorsZiyadah.end_page && (
-                  <p className="mt-2 text-xs text-red-600">{errorsZiyadah.end_page.message}</p>
+                {errorsZiyadah.ayat_selesai && (
+                  <p className="mt-2 text-xs text-red-600">{errorsZiyadah.ayat_selesai.message}</p>
                 )}
               </div>
             </div>
@@ -788,7 +788,7 @@ export default function HalaqahDetailPage() {
       <Modal
         isOpen={isMurojaahModalOpen}
         onClose={() => setIsMurojaahModalOpen(false)}
-        title={murojaahModalMode === "create" ? "Tambah Murojaah Baru" : "Edit Data Murojaah"}
+        title={murojaahModalMode === "create" ? "Tambah Tsunayyah Baru" : "Edit Data Tsunayyah"}
       >
         <form onSubmit={handleSubmitMurojaah(handleMurojaahSubmit)}>
           <div className="p-6 space-y-4">
@@ -840,45 +840,48 @@ export default function HalaqahDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  Juz <span className="text-red-500">*</span>
+                  Surat <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={30}
-                  {...registerMurojaah("juz", { valueAsNumber: true })}
+                <select
+                  {...registerMurojaah("surat", { valueAsNumber: true })}
                   className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-800"
-                />
-                {errorsMurojaah.juz && (
-                  <p className="mt-2 text-xs text-red-600">{errorsMurojaah.juz.message}</p>
+                >
+                  {suratOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {errorsMurojaah.surat && (
+                  <p className="mt-2 text-xs text-red-600">{errorsMurojaah.surat.message}</p>
                 )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  Hal. Mulai <span className="text-red-500">*</span>
+                  Ayat Mulai <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
                   min={1}
-                  {...registerMurojaah("start_page", { valueAsNumber: true })}
+                  {...registerMurojaah("ayat_mulai", { valueAsNumber: true })}
                   className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-800"
                 />
-                {errorsMurojaah.start_page && (
-                  <p className="mt-2 text-xs text-red-600">{errorsMurojaah.start_page.message}</p>
+                {errorsMurojaah.ayat_mulai && (
+                  <p className="mt-2 text-xs text-red-600">{errorsMurojaah.ayat_mulai.message}</p>
                 )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  Hal. Selesai <span className="text-red-500">*</span>
+                  Ayat Selesai <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
                   min={1}
-                  {...registerMurojaah("end_page", { valueAsNumber: true })}
+                  {...registerMurojaah("ayat_selesai", { valueAsNumber: true })}
                   className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-800"
                 />
-                {errorsMurojaah.end_page && (
-                  <p className="mt-2 text-xs text-red-600">{errorsMurojaah.end_page.message}</p>
+                {errorsMurojaah.ayat_selesai && (
+                  <p className="mt-2 text-xs text-red-600">{errorsMurojaah.ayat_selesai.message}</p>
                 )}
               </div>
             </div>
