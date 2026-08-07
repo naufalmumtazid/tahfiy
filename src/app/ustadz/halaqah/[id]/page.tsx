@@ -503,9 +503,9 @@ export default function HalaqahDetailPage() {
             </div>
             <div>
               <p className={`text-xs font-semibold uppercase tracking-wider ${activeTab === "murojaah" ? "text-blue-100" : "text-gray-400"}`}>
-                Tsunayyah Hafalan
+                Tsunnaiyyah Hafalan
               </p>
-              <h4 className="text-lg font-bold mt-0.5">Menu Tsunayyah</h4>
+              <h4 className="text-lg font-bold mt-0.5">Menu Tsunnaiyyah</h4>
             </div>
           </div>
         </button>
@@ -641,14 +641,14 @@ export default function HalaqahDetailPage() {
                   <button
                     onClick={() => openEditMurojaah(row.original)}
                     className="rounded-xl p-2 text-blue-600 hover:bg-blue-50 transition cursor-pointer"
-                    title="Edit Tsunayyah"
+                    title="Edit Tsunnaiyyah"
                   >
                     <FiEdit2 className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteMurojaah(row.original)}
                     className="rounded-xl p-2 text-red-500 hover:bg-red-50 transition cursor-pointer"
-                    title="Hapus Tsunayyah"
+                    title="Hapus Tsunnaiyyah"
                   >
                     <FiTrash2 className="h-4 w-4" />
                   </button>
@@ -657,14 +657,14 @@ export default function HalaqahDetailPage() {
             },
           ]}
           data={murojaahList}
-          placeholderSearch="Cari tsunayyah..."
+          placeholderSearch="Cari tsunnaiyyah..."
           renderTopActions={() => (
             <button
               onClick={openCreateMurojaah}
               className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 cursor-pointer hover:bg-blue-700 transition active:scale-95 shrink-0"
             >
               <FiUserPlus className="h-4 w-4" />
-              Tambah Tsunayyah
+              Tambah Tsunnaiyyah
             </button>
           )}
         />
@@ -809,7 +809,7 @@ export default function HalaqahDetailPage() {
       <Modal
         isOpen={isMurojaahModalOpen}
         onClose={() => setIsMurojaahModalOpen(false)}
-        title={murojaahModalMode === "create" ? "Tambah Tsunayyah Baru" : "Edit Data Tsunayyah"}
+        title={murojaahModalMode === "create" ? "Tambah Tsunnaiyyah Baru" : "Edit Data Tsunnaiyyah"}
       >
         <form onSubmit={handleSubmitMurojaah(handleMurojaahSubmit)}>
           <div className="p-6 space-y-4">
