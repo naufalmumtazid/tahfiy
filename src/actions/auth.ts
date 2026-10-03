@@ -90,7 +90,15 @@ export async function loginAction(formData: FormData) {
     });
 
     // Determine redirection based on role
-    const redirectTo = user.role === "admin" ? "/admin" : "/";
+    const redirectTo =
+      user.role === "admin"
+        ? "/admin"
+        : user.role === "ustadz"
+          ? "/ustadz"
+          : user.role === "santri"
+            ? "/santri"
+            : "/login";
+
     return { success: true, redirectTo };
   } catch (err) {
     console.error("Authentication error:", err);

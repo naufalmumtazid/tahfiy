@@ -14,7 +14,7 @@ function LoginForm() {
 
   const [error, setError] = useState<string | null>(
     errorParam === "unauthorized"
-      ? "Akses ditolak. Anda harus login sebagai admin."
+      ? "Akses ditolak. Silakan masuk dengan akun yang sesuai."
       : null
   );
   const [loading, setLoading] = useState(false);
