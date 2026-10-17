@@ -78,6 +78,8 @@ export default function HalaqahDetailPage() {
   const [murojaahList, setMurojaahList] = useState<MurojaahType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRecordSantri, setSelectedRecordSantri] =
+    useState<SantriItem | null>(null);
 
   // Santri Modal States
   const [isSantriModalOpen, setIsSantriModalOpen] = useState(false);
@@ -112,7 +114,6 @@ export default function HalaqahDetailPage() {
     null,
   );
 
-  // React Hook Forms for Ziyadah & Murojaah
   // React Hook Forms for Ziyadah & Murojaah
   const {
     register: registerZiyadah,
@@ -554,7 +555,13 @@ export default function HalaqahDetailPage() {
       {activeTab === "santri" && (
         <DataTable
           columns={[
-            { header: "ID", accessorKey: "id" },
+            {
+              header: "No",
+              cell: ({ row, table }) =>
+                table
+                  .getPrePaginationRowModel()
+                  .rows.findIndex((tableRow) => tableRow.id === row.id) + 1,
+            },
             { header: "Nama", accessorKey: "name" },
             { header: "Kelas", accessorKey: "class" },
             {
@@ -575,6 +582,30 @@ export default function HalaqahDetailPage() {
               header: "Aksi",
               cell: ({ row }) => (
                 <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedRecordSantri(row.original);
+                      setActiveTab("ziyadah");
+                    }}
+                    className="rounded-xl p-2 text-cyan-700 hover:bg-cyan-50 transition cursor-pointer"
+                    title={`Lihat Ziyadah ${row.original.name}`}
+                    aria-label={`Lihat Ziyadah ${row.original.name}`}
+                  >
+                    <FiBookOpen className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedRecordSantri(row.original);
+                      setActiveTab("murojaah");
+                    }}
+                    className="rounded-xl p-2 text-cyan-600 hover:bg-cyan-50 transition cursor-pointer"
+                    title={`Lihat Tsunaiyyah ${row.original.name}`}
+                    aria-label={`Lihat Tsunaiyyah ${row.original.name}`}
+                  >
+                    <FiCalendar className="h-4 w-4" />
+                  </button>
                   <button
                     onClick={() => openEditSantri(row.original)}
                     className="rounded-xl p-2 text-blue-600 hover:bg-blue-50 transition cursor-pointer"
