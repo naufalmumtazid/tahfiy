@@ -423,6 +423,14 @@ export default function HalaqahDetailPage() {
     }
   };
 
+  const visibleZiyadah = selectedRecordSantri
+    ? ziyadahList.filter((item) => item.santri_id === selectedRecordSantri.id)
+    : [];
+
+  const visibleMurojaah = selectedRecordSantri
+    ? murojaahList.filter((item) => item.santri_id === selectedRecordSantri.id)
+    : [];
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
