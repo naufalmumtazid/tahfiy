@@ -260,7 +260,7 @@ export default function HalaqahDetailPage() {
     setZiyadahModalMode("create");
     setSelectedZiyadah(null);
     resetZiyadah({
-      santri_id: santri[0]?.id ?? 0,
+      santri_id: selectedRecordSantri?.id ?? 0,
       date: new Date().toISOString().split("T")[0],
       surat: 1,
       ayat_mulai: 1,
@@ -343,7 +343,7 @@ export default function HalaqahDetailPage() {
     setMurojaahModalMode("create");
     setSelectedMurojaah(null);
     resetMurojaah({
-      santri_id: santri[0]?.id ?? 0,
+      santri_id: selectedRecordSantri?.id ?? 0,
       date: new Date().toISOString().split("T")[0],
       surat: 1,
       ayat_mulai: 1,
@@ -690,7 +690,7 @@ export default function HalaqahDetailPage() {
               ),
             },
           ]}
-          data={ziyadahList}
+          data={visibleZiyadah}
           placeholderSearch="Cari ziyadah..."
           renderTopActions={() => (
             <button
@@ -742,7 +742,7 @@ export default function HalaqahDetailPage() {
               ),
             },
           ]}
-          data={murojaahList}
+          data={visibleMurojaah}
           placeholderSearch="Cari tsunnaiyyah..."
           renderTopActions={() => (
             <button
