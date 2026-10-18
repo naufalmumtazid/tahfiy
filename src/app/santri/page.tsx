@@ -132,9 +132,11 @@ export default function SantriDashboard() {
           </div>
 
           {lastActivity && (
-            <div className="mb-6 gap-4 rounded-2xl border border-blue-100 bg-blue-50/40 p-4 text-sm text-blue-700 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="mb-6 gap-4 rounded-2xl border border-blue-100 bg-blue-50/40 p-4 text-sm text-blue-700 shadow-sm flex flex-col sm:block">
               Aktivitas terakhir:{" "}
               <span className="font-semibold">
+                {lastActivity.activityType}
+                {" — "}
                 {new Date(`${lastActivity.date}T00:00:00`).toLocaleDateString(
                   "id-ID",
                   {
@@ -144,8 +146,6 @@ export default function SantriDashboard() {
                     year: "numeric",
                   },
                 )}
-                {" — "}
-                {lastActivity.activityType}
               </span>
             </div>
           )}
