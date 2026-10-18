@@ -29,7 +29,6 @@ export default function SantriUserLists({ murojaah, ziyadah }: Props) {
     { accessorKey: "ayat_mulai", header: "Ayat Mulai" },
     { accessorKey: "ayat_selesai", header: "Ayat Selesai" },
     { accessorKey: "halaqah_name", header: "Halaqah" },
-    { accessorKey: "class", header: "Kelas" },
   ];
 
   const ziyadahColumns: ColumnDef<Ziyadah>[] = [
@@ -49,7 +48,6 @@ export default function SantriUserLists({ murojaah, ziyadah }: Props) {
     { accessorKey: "ayat_mulai", header: "Ayat Mulai" },
     { accessorKey: "ayat_selesai", header: "Ayat Selesai" },
     { accessorKey: "halaqah_name", header: "Halaqah" },
-    { accessorKey: "class", header: "Kelas" },
   ];
 
   return (
