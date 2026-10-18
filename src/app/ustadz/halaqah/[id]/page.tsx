@@ -562,16 +562,13 @@ export default function HalaqahDetailPage() {
 
       {selectedRecordSantri &&
         (activeTab === "ziyadah" || activeTab === "murojaah") && (
-          <section className="mb-6 flex flex-col gap-4 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <section className="mb-6 flex flex-col gap-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-700 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-blue-600">
                 <FiUser className="h-5 w-5" />
               </div>
 
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Santri dipilih
-                </p>
                 <p className="wrap-break-word font-semibold text-gray-800">
                   {selectedRecordSantri.name}
                 </p>
@@ -584,7 +581,7 @@ export default function HalaqahDetailPage() {
             <button
               type="button"
               onClick={() => setActiveTab("santri")}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-100 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 sm:w-auto"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-100 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-white/50 hover:border-blue-200 sm:w-auto"
             >
               <FiArrowLeft className="h-4 w-4" /> Ganti santri
             </button>

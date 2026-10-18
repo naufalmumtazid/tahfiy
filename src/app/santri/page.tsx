@@ -67,8 +67,11 @@ export default function SantriDashboard() {
   const totalMurojaah = murojaah.length;
   const totalZiyadah = ziyadah.length;
   const lastActivity = useMemo(
-    () => [...murojaah, ...ziyadah].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0],
-    [murojaah, ziyadah]
+    () =>
+      [...murojaah, ...ziyadah].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      )[0],
+    [murojaah, ziyadah],
   );
 
   return (
@@ -86,26 +89,45 @@ export default function SantriDashboard() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
             <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Kelas</p>
-              <p className="mt-3 text-2xl font-bold text-gray-800">{murojaah[0]?.class ?? ziyadah[0]?.class ?? "-"}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
+                Kelas
+              </p>
+              <p className="mt-3 text-2xl font-bold text-gray-800">
+                {murojaah[0]?.class ?? ziyadah[0]?.class ?? "-"}
+              </p>
             </div>
             <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Halaqah</p>
-              <p className="mt-3 text-2xl font-bold text-gray-800">{murojaah[0]?.halaqah_name ?? ziyadah[0]?.halaqah_name ?? "-"}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
+                Halaqah
+              </p>
+              <p className="mt-3 text-2xl font-bold text-gray-800">
+                {murojaah[0]?.halaqah_name ?? ziyadah[0]?.halaqah_name ?? "-"}
+              </p>
             </div>
             <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Murojaah</p>
-              <p className="mt-3 text-2xl font-bold text-gray-800">{totalMurojaah}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
+                Murojaah
+              </p>
+              <p className="mt-3 text-2xl font-bold text-gray-800">
+                {totalMurojaah}
+              </p>
             </div>
             <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Ziyadah</p>
-              <p className="mt-3 text-2xl font-bold text-gray-800">{totalZiyadah}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
+                Ziyadah
+              </p>
+              <p className="mt-3 text-2xl font-bold text-gray-800">
+                {totalZiyadah}
+              </p>
             </div>
           </div>
 
           {lastActivity && (
-            <div className="mb-8 rounded-2xl border border-blue-100 bg-blue-50/40 p-4 text-sm text-blue-700">
-              Aktivitas terakhir: <span className="font-semibold">{new Date(lastActivity.date).toLocaleDateString("id-ID")}</span>
+            <div className="mb-6 gap-4 rounded-2xl border border-blue-100 bg-blue-50/40 p-4 text-sm text-blue-700 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              Aktivitas terakhir:{" "}
+              <span className="font-semibold">
+                {new Date(lastActivity.date).toLocaleDateString("id-ID")}
+              </span>
             </div>
           )}
 
