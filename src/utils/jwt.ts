@@ -2,12 +2,14 @@ import { RolesType } from "@/features/auth/types";
 import { SignJWT, jwtVerify } from "jose";
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "tahfiy-super-secret-key-at-least-32-chars-long-2026"
+  process.env.JWT_SECRET ||
+    "tahfiy-super-secret-key-at-least-32-chars-long-2026",
 );
 
 export async function signJWT(payload: {
   userId: number;
   username: string;
+  name?: string;
   role: RolesType;
 }) {
   return await new SignJWT(payload)
@@ -23,6 +25,7 @@ export async function verifyJWT(token: string) {
     return payload as {
       userId: number;
       username: string;
+      name?: string;
       role: RolesType;
       iat: number;
       exp: number;

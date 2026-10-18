@@ -86,7 +86,7 @@ export default function SantriDashboard() {
   return (
     <>
       <Header
-        title={`Selamat datang, ${user?.username ?? "Santri"}`}
+        title={`Selamat datang,  ${user?.name ?? user?.username ?? "Santri"}`}
         subtitle="Lihat progres hafalan dan ziyadah Anda secara personal."
       />
 
