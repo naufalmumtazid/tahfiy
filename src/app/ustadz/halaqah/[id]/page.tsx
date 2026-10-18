@@ -13,6 +13,7 @@ import {
   FiUserPlus,
   FiAlertCircle,
   FiUsers,
+  FiUser,
   FiBookOpen,
   FiCalendar,
 } from "react-icons/fi";
@@ -559,6 +560,37 @@ export default function HalaqahDetailPage() {
         </button>
       </div>
 
+      {selectedRecordSantri &&
+        (activeTab === "ziyadah" || activeTab === "murojaah") && (
+          <section className="mb-6 flex flex-col gap-4 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                <FiUser className="h-5 w-5" />
+              </div>
+
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  Santri dipilih
+                </p>
+                <p className="wrap-break-word font-semibold text-gray-800">
+                  {selectedRecordSantri.name}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Kelas: {selectedRecordSantri.class}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("santri")}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-100 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 sm:w-auto"
+            >
+              <FiArrowLeft className="h-4 w-4" /> Ganti santri
+            </button>
+          </section>
+        )}
+
       {/* Dynamic Tables rendering depending on active tab */}
       {activeTab === "santri" && (
         <DataTable
@@ -637,7 +669,7 @@ export default function HalaqahDetailPage() {
           renderTopActions={() => (
             <button
               onClick={openCreateSantri}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 cursor-pointer hover:bg-blue-700 transition active:scale-95 shrink-0"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 cursor-pointer hover:bg-blue-700 transition active:scale-95 shrink-0 w-full sm:w-auto"
             >
               <FiUserPlus className="h-4 w-4" />
               Tambah Santri
@@ -696,7 +728,7 @@ export default function HalaqahDetailPage() {
             <button
               onClick={openCreateZiyadah}
               disabled={!selectedRecordSantri || ziyadahSubmitLoading}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 cursor-pointer hover:bg-blue-700 transition active:scale-95 shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 cursor-pointer hover:bg-blue-700 transition active:scale-95 shrink-0 w-full sm:w-auto disabled:cursor-not-allowed disabled:opacity-50"
             >
               <FiUserPlus className="h-4 w-4" />
               Tambah Ziyadah
@@ -749,7 +781,7 @@ export default function HalaqahDetailPage() {
             <button
               onClick={openCreateMurojaah}
               disabled={!selectedRecordSantri || murojaahSubmitLoading}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 cursor-pointer hover:bg-blue-700 transition active:scale-95 shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 cursor-pointer hover:bg-blue-700 transition active:scale-95 shrink-0 w-full sm:w-auto disabled:cursor-not-allowed disabled:opacity-50"
             >
               <FiUserPlus className="h-4 w-4" />
               Tambah Tsunnaiyyah
