@@ -599,7 +599,7 @@ export default function HalaqahDetailPage() {
                   .getPrePaginationRowModel()
                   .rows.findIndex((tableRow) => tableRow.id === row.id) + 1,
             },
-            { header: "Nama", accessorKey: "name" },
+            { header: "Nama Santri", accessorKey: "name" },
             { header: "Kelas", accessorKey: "class" },
             {
               header: "Status",
