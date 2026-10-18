@@ -695,7 +695,8 @@ export default function HalaqahDetailPage() {
           renderTopActions={() => (
             <button
               onClick={openCreateZiyadah}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 cursor-pointer hover:bg-blue-700 transition active:scale-95 shrink-0"
+              disabled={!selectedRecordSantri || ziyadahSubmitLoading}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 cursor-pointer hover:bg-blue-700 transition active:scale-95 shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <FiUserPlus className="h-4 w-4" />
               Tambah Ziyadah
@@ -747,7 +748,8 @@ export default function HalaqahDetailPage() {
           renderTopActions={() => (
             <button
               onClick={openCreateMurojaah}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 cursor-pointer hover:bg-blue-700 transition active:scale-95 shrink-0"
+              disabled={!selectedRecordSantri || murojaahSubmitLoading}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 cursor-pointer hover:bg-blue-700 transition active:scale-95 shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <FiUserPlus className="h-4 w-4" />
               Tambah Tsunnaiyyah
@@ -808,6 +810,9 @@ export default function HalaqahDetailPage() {
                     classNamePrefix="react-select"
                     className="text-sm"
                     isClearable={false}
+                    isDisabled={
+                      ziyadahModalMode === "create" && !!selectedRecordSantri
+                    }
                   />
                 )}
               />
@@ -948,6 +953,9 @@ export default function HalaqahDetailPage() {
                     classNamePrefix="react-select"
                     className="text-sm"
                     isClearable={false}
+                    isDisabled={
+                      murojaahModalMode === "create" && !!selectedRecordSantri
+                    }
                   />
                 )}
               />
