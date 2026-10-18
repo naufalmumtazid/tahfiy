@@ -66,13 +66,22 @@ export default function SantriDashboard() {
 
   const totalMurojaah = murojaah.length;
   const totalZiyadah = ziyadah.length;
-  const lastActivity = useMemo(
-    () =>
-      [...murojaah, ...ziyadah].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      )[0],
-    [murojaah, ziyadah],
-  );
+  const lastActivity = useMemo(() => {
+    const activities = [
+      ...murojaah.map((activity) => ({
+        ...activity,
+        activityType: "Tsunnaiyyah" as const,
+      })),
+      ...ziyadah.map((activity) => ({
+        ...activity,
+        activityType: "Ziyadah" as const,
+      })),
+    ];
+
+    return activities.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    )[0];
+  }, [murojaah, ziyadah]);
 
   return (
     <>
@@ -126,7 +135,17 @@ export default function SantriDashboard() {
             <div className="mb-6 gap-4 rounded-2xl border border-blue-100 bg-blue-50/40 p-4 text-sm text-blue-700 shadow-sm sm:flex-row sm:items-center sm:justify-between">
               Aktivitas terakhir:{" "}
               <span className="font-semibold">
-                {new Date(lastActivity.date).toLocaleDateString("id-ID")}
+                {new Date(`${lastActivity.date}T00:00:00`).toLocaleDateString(
+                  "id-ID",
+                  {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  },
+                )}
+                {" — "}
+                {lastActivity.activityType}
               </span>
             </div>
           )}
