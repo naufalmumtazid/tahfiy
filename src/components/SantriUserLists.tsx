@@ -5,7 +5,7 @@ import DataTable from "@/components/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { Murojaah } from "@/features/murojaah/types";
 import { Ziyadah } from "@/features/ziyadah/types";
-import { getSuratName, suratOptions } from "@/utils/surat";
+import { getSuratName } from "@/utils/surat";
 
 type Props = {
   murojaah: Murojaah[];
