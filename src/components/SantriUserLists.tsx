@@ -5,6 +5,7 @@ import DataTable from "@/components/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { Murojaah } from "@/features/murojaah/types";
 import { Ziyadah } from "@/features/ziyadah/types";
+import { getSuratName, suratOptions } from "@/utils/surat";
 
 type Props = {
   murojaah: Murojaah[];
@@ -25,7 +26,10 @@ export default function SantriUserLists({ murojaah, ziyadah }: Props) {
       header: "Tanggal",
       cell: (info) => new Date(info.getValue() as string).toLocaleDateString(),
     },
-    { accessorKey: "surat", header: "Surat" },
+    {
+      header: "Surat",
+      cell: ({ row }) => <span>{getSuratName(row.original.surat)}</span>,
+    },
     { accessorKey: "ayat_mulai", header: "Ayat Mulai" },
     { accessorKey: "ayat_selesai", header: "Ayat Selesai" },
     { accessorKey: "halaqah_name", header: "Halaqah" },
@@ -44,7 +48,10 @@ export default function SantriUserLists({ murojaah, ziyadah }: Props) {
       header: "Tanggal",
       cell: (info) => new Date(info.getValue() as string).toLocaleDateString(),
     },
-    { accessorKey: "surat", header: "Surat" },
+    {
+      header: "Surat",
+      cell: ({ row }) => <span>{getSuratName(row.original.surat)}</span>,
+    },
     { accessorKey: "ayat_mulai", header: "Ayat Mulai" },
     { accessorKey: "ayat_selesai", header: "Ayat Selesai" },
     { accessorKey: "halaqah_name", header: "Halaqah" },
