@@ -10,6 +10,7 @@ const COOKIE_NAME = "auth_token";
 export interface AuthUser {
   userId: number;
   username: string;
+  name?: string;
   role: "admin" | "ustadz" | "santri";
 }
 
@@ -77,6 +78,7 @@ export async function loginAction(formData: FormData) {
     const loggedInUser: AuthUser = {
       userId: user.id,
       username: user.username,
+      name: user.name,
       role: user.role,
     };
 
@@ -124,6 +126,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     return {
       userId: payload.userId,
       username: payload.username,
+      name: payload.name,
       role: payload.role,
     };
   } catch {

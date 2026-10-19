@@ -66,15 +66,27 @@ export default function SantriDashboard() {
 
   const totalMurojaah = murojaah.length;
   const totalZiyadah = ziyadah.length;
-  const lastActivity = useMemo(
-    () => [...murojaah, ...ziyadah].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0],
-    [murojaah, ziyadah]
-  );
+  const lastActivity = useMemo(() => {
+    const activities = [
+      ...murojaah.map((activity) => ({
+        ...activity,
+        activityType: "Tsunnaiyyah" as const,
+      })),
+      ...ziyadah.map((activity) => ({
+        ...activity,
+        activityType: "Ziyadah" as const,
+      })),
+    ];
+
+    return activities.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    )[0];
+  }, [murojaah, ziyadah]);
 
   return (
     <>
       <Header
-        title={`Selamat datang, ${user?.username ?? "Santri"}`}
+        title={`Selamat datang,  ${user?.name ?? user?.username ?? "Santri"}`}
         subtitle="Lihat progres hafalan dan ziyadah Anda secara personal."
       />
 
@@ -86,26 +98,55 @@ export default function SantriDashboard() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
             <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Kelas</p>
-              <p className="mt-3 text-2xl font-bold text-gray-800">{murojaah[0]?.class ?? ziyadah[0]?.class ?? "-"}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
+                Kelas
+              </p>
+              <p className="mt-3 text-2xl font-bold text-gray-800">
+                {murojaah[0]?.class ?? ziyadah[0]?.class ?? "-"}
+              </p>
             </div>
             <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Halaqah</p>
-              <p className="mt-3 text-2xl font-bold text-gray-800">{murojaah[0]?.halaqah_name ?? ziyadah[0]?.halaqah_name ?? "-"}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
+                Halaqah
+              </p>
+              <p className="mt-3 text-2xl font-bold text-gray-800">
+                {murojaah[0]?.halaqah_name ?? ziyadah[0]?.halaqah_name ?? "-"}
+              </p>
             </div>
             <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Murojaah</p>
-              <p className="mt-3 text-2xl font-bold text-gray-800">{totalMurojaah}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
+                Murojaah
+              </p>
+              <p className="mt-3 text-2xl font-bold text-gray-800">
+                {totalMurojaah}
+              </p>
             </div>
             <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Ziyadah</p>
-              <p className="mt-3 text-2xl font-bold text-gray-800">{totalZiyadah}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
+                Ziyadah
+              </p>
+              <p className="mt-3 text-2xl font-bold text-gray-800">
+                {totalZiyadah}
+              </p>
             </div>
           </div>
 
           {lastActivity && (
-            <div className="mb-8 rounded-2xl border border-blue-100 bg-blue-50/40 p-4 text-sm text-blue-700">
-              Aktivitas terakhir: <span className="font-semibold">{new Date(lastActivity.date).toLocaleDateString("id-ID")}</span>
+            <div className="mb-6 gap-4 rounded-2xl border border-blue-100 bg-blue-50/40 p-4 text-sm text-blue-700 shadow-sm flex flex-col sm:block">
+              Aktivitas terakhir:{" "}
+              <span className="font-semibold">
+                {lastActivity.activityType}
+                {" — "}
+                {new Date(`${lastActivity.date}T00:00:00`).toLocaleDateString(
+                  "id-ID",
+                  {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  },
+                )}
+              </span>
             </div>
           )}
 
