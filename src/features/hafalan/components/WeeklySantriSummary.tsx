@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  FiArrowLeft,
-  FiBookOpen,
-  FiCheck,
-  FiRefreshCw,
-  FiUser,
-} from "react-icons/fi";
+import { FiBookOpen, FiCheck, FiRefreshCw, FiUser } from "react-icons/fi";
 import type { SantriItem } from "@/features/halaqah/types";
 import { WeeklyPagination } from "@/features/hafalan/components/WeeklyPagination";
 
@@ -73,13 +67,12 @@ export function WeeklySantriSummary({
   examError,
   onToggleExam,
   onChangeWeek,
-  onChangeSantri,
 }: WeeklySantriSummaryProps) {
   return (
     <section className="mb-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-sm">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-blue-600 to-cyan-500 text-white shadow-sm">
             <FiUser className="h-5 w-5" />
           </div>
 
@@ -92,14 +85,6 @@ export function WeeklySantriSummary({
             </p>
           </div>
         </div>
-        {/* <button
-          type="button"
-          onClick={onChangeSantri}
-          className="ml-auto flex w-full md:w-fit shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-        >
-          <FiArrowLeft className="h-4 w-4" />
-          Ganti santri
-        </button> */}
 
         <div className="lg:min-w-72">
           <WeeklyPagination

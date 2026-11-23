@@ -59,7 +59,10 @@ import {
 import { Ziyadah as ZiyadahType } from "@/features/ziyadah/types";
 
 // Murojaah Imports
-import { MurojaahFormValues, murojaahSchema } from "@/features/murojaah/schemas";
+import {
+  MurojaahFormValues,
+  murojaahSchema,
+} from "@/features/murojaah/schemas";
 import {
   createMurojaah,
   deleteMurojaah,
@@ -73,7 +76,9 @@ export default function HalaqahDetailPage() {
   const idStr = params.id as string;
   const halaqahId = parseInt(idStr, 10);
 
-  const [activeTab, setActiveTab] = useState<"santri" | "ziyadah" | "murojaah">("santri");
+  const [activeTab, setActiveTab] = useState<"santri" | "ziyadah" | "murojaah">(
+    "santri",
+  );
 
   // Core Data States
   const [halaqah, setHalaqah] = useState<HalaqahItem | null>(null);
@@ -88,24 +93,36 @@ export default function HalaqahDetailPage() {
 
   // Santri Modal States
   const [isSantriModalOpen, setIsSantriModalOpen] = useState(false);
-  const [santriModalMode, setSantriModalMode] = useState<"create" | "edit">("create");
+  const [santriModalMode, setSantriModalMode] = useState<"create" | "edit">(
+    "create",
+  );
   const [selectedSantri, setSelectedSantri] = useState<SantriItem | null>(null);
   const [santriSubmitLoading, setSantriSubmitLoading] = useState(false);
   const [santriFormError, setSantriFormError] = useState<string | null>(null);
 
   // Ziyadah Modal States
   const [isZiyadahModalOpen, setIsZiyadahModalOpen] = useState(false);
-  const [ziyadahModalMode, setZiyadahModalMode] = useState<"create" | "edit">("create");
-  const [selectedZiyadah, setSelectedZiyadah] = useState<ZiyadahType | null>(null);
+  const [ziyadahModalMode, setZiyadahModalMode] = useState<"create" | "edit">(
+    "create",
+  );
+  const [selectedZiyadah, setSelectedZiyadah] = useState<ZiyadahType | null>(
+    null,
+  );
   const [ziyadahSubmitLoading, setZiyadahSubmitLoading] = useState(false);
   const [ziyadahFormError, setZiyadahFormError] = useState<string | null>(null);
 
   // Murojaah Modal States
   const [isMurojaahModalOpen, setIsMurojaahModalOpen] = useState(false);
-  const [murojaahModalMode, setMurojaahModalMode] = useState<"create" | "edit">("create");
-  const [selectedMurojaah, setSelectedMurojaah] = useState<MurojaahType | null>(null);
+  const [murojaahModalMode, setMurojaahModalMode] = useState<"create" | "edit">(
+    "create",
+  );
+  const [selectedMurojaah, setSelectedMurojaah] = useState<MurojaahType | null>(
+    null,
+  );
   const [murojaahSubmitLoading, setMurojaahSubmitLoading] = useState(false);
-  const [murojaahFormError, setMurojaahFormError] = useState<string | null>(null);
+  const [murojaahFormError, setMurojaahFormError] = useState<string | null>(
+    null,
+  );
 
   // React Hook Forms for Ziyadah & Murojaah
   const {
@@ -149,8 +166,7 @@ export default function HalaqahDetailPage() {
   });
 
   const [currentWeekStart] = useState(getCurrentWeekStart);
-  const [selectedWeekStart, setSelectedWeekStart] =
-    useState(currentWeekStart);
+  const [selectedWeekStart, setSelectedWeekStart] = useState(currentWeekStart);
 
   const {
     passed: examPassed,
@@ -160,16 +176,17 @@ export default function HalaqahDetailPage() {
   } = useWeeklyExam(selectedRecordSantri?.id ?? null, selectedWeekStart);
 
   // Load All Data
-// Load All Data
+  // Load All Data
   const loadData = useCallback(async () => {
     setError(null);
     try {
-      const [allHalaqahs, santriList, allZiyadah, allMurojaah] = await Promise.all([
-        fetchHalaqahs(),
-        fetchSantriByHalaqah(halaqahId),
-        fetchZiyadah(),
-        fetchMurojaah(),
-      ]);
+      const [allHalaqahs, santriList, allZiyadah, allMurojaah] =
+        await Promise.all([
+          fetchHalaqahs(),
+          fetchSantriByHalaqah(halaqahId),
+          fetchZiyadah(),
+          fetchMurojaah(),
+        ]);
 
       setHalaqahs(allHalaqahs);
       const found = allHalaqahs.find((h) => h.id === halaqahId);
@@ -223,7 +240,9 @@ export default function HalaqahDetailPage() {
     setIsSantriModalOpen(true);
   };
 
-  const handleSantriSubmit = async (payload: CreateSantriPayload | UpdateSantriPayload) => {
+  const handleSantriSubmit = async (
+    payload: CreateSantriPayload | UpdateSantriPayload,
+  ) => {
     setSantriSubmitLoading(true);
     setSantriFormError(null);
     try {
@@ -252,7 +271,8 @@ export default function HalaqahDetailPage() {
   };
 
   const handleDeleteSantri = async (row: SantriItem) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus santri "${row.name}"?`)) return;
+    if (!confirm(`Apakah Anda yakin ingin menghapus santri "${row.name}"?`))
+      return;
     try {
       await deleteSantri(row.id);
       toast.success(`Santri "${row.name}" berhasil dihapus.`);
@@ -343,7 +363,8 @@ export default function HalaqahDetailPage() {
   };
 
   const handleDeleteZiyadah = async (item: ZiyadahType) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus ziyadah "${item.name}"?`)) return;
+    if (!confirm(`Apakah Anda yakin ingin menghapus ziyadah "${item.name}"?`))
+      return;
     try {
       await deleteZiyadah(item.id);
       toast.success(`Ziyadah "${item.name}" berhasil dihapus.`);
@@ -394,7 +415,9 @@ export default function HalaqahDetailPage() {
 
     const result = murojaahSchema.safeParse(values);
     if (!result.success) {
-      setMurojaahFormError(result.error.issues.map((i) => i.message).join(". "));
+      setMurojaahFormError(
+        result.error.issues.map((i) => i.message).join(". "),
+      );
       setMurojaahSubmitLoading(false);
       return;
     }
@@ -431,7 +454,8 @@ export default function HalaqahDetailPage() {
   };
 
   const handleDeleteMurojaah = async (item: MurojaahType) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus murojaah "${item.name}"?`)) return;
+    if (!confirm(`Apakah Anda yakin ingin menghapus murojaah "${item.name}"?`))
+      return;
     try {
       await deleteMurojaah(item.id);
       toast.success(`Murojaah "${item.name}" berhasil dihapus.`);
@@ -449,25 +473,25 @@ export default function HalaqahDetailPage() {
   const visibleMurojaah = selectedRecordSantri
     ? murojaahList.filter((item) => item.santri_id === selectedRecordSantri.id)
     : [];
-  const weekEnd = selectedWeekStart
-    ? getWeekRange(selectedWeekStart).end
-    : "";
-  const weeklyZiyadah = visibleZiyadah.filter(
-    (item) => item.date >= selectedWeekStart && item.date <= weekEnd,
-  ).sort((first, second) =>
-    first.date.localeCompare(second.date) || first.id - second.id,
-  );
-  const weeklyMurojaah = visibleMurojaah.filter(
-    (item) => item.date >= selectedWeekStart && item.date <= weekEnd,
-  ).sort((first, second) =>
-    first.date.localeCompare(second.date) || first.id - second.id,
-  );
+  const weekEnd = selectedWeekStart ? getWeekRange(selectedWeekStart).end : "";
+  const weeklyZiyadah = visibleZiyadah
+    .filter((item) => item.date >= selectedWeekStart && item.date <= weekEnd)
+    .sort(
+      (first, second) =>
+        first.date.localeCompare(second.date) || first.id - second.id,
+    );
+  const weeklyMurojaah = visibleMurojaah
+    .filter((item) => item.date >= selectedWeekStart && item.date <= weekEnd)
+    .sort(
+      (first, second) =>
+        first.date.localeCompare(second.date) || first.id - second.id,
+    );
   const ziyadahPageSummary = summarizePages(weeklyZiyadah);
   const murojaahPageSummary = summarizePages(weeklyMurojaah);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -478,7 +502,9 @@ export default function HalaqahDetailPage() {
       <div className="p-6 bg-red-50 border border-red-100 rounded-3xl max-w-lg mx-auto mt-10 text-center">
         <FiAlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
         <h3 className="text-lg font-bold text-red-800">Gagal Memuat Halaqah</h3>
-        <p className="text-sm text-red-600 mt-2">{error || "Halaqah tidak ditemukan."}</p>
+        <p className="text-sm text-red-600 mt-2">
+          {error || "Halaqah tidak ditemukan."}
+        </p>
         <Link
           href="/admin/halaqah"
           className="inline-block mt-6 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold text-sm transition"
@@ -633,7 +659,9 @@ export default function HalaqahDetailPage() {
                 <span>
                   {getSuratName(row.original.surat)} ayat{" "}
                   {row.original.ayat_mulai} –{" "}
-                  {getSuratName(row.original.surat_selesai ?? row.original.surat)}{" "}
+                  {getSuratName(
+                    row.original.surat_selesai ?? row.original.surat,
+                  )}{" "}
                   ayat {row.original.ayat_selesai}
                 </span>
               ),
@@ -706,7 +734,9 @@ export default function HalaqahDetailPage() {
                 <span>
                   {getSuratName(row.original.surat)} ayat{" "}
                   {row.original.ayat_mulai} –{" "}
-                  {getSuratName(row.original.surat_selesai ?? row.original.surat)}{" "}
+                  {getSuratName(
+                    row.original.surat_selesai ?? row.original.surat,
+                  )}{" "}
                   ayat {row.original.ayat_selesai}
                 </span>
               ),
@@ -778,7 +808,11 @@ export default function HalaqahDetailPage() {
       <Modal
         isOpen={isZiyadahModalOpen}
         onClose={() => setIsZiyadahModalOpen(false)}
-        title={ziyadahModalMode === "create" ? "Tambah Ziyadah Baru" : "Edit Data Ziyadah"}
+        title={
+          ziyadahModalMode === "create"
+            ? "Tambah Ziyadah Baru"
+            : "Edit Data Ziyadah"
+        }
       >
         <form onSubmit={handleSubmitZiyadah(handleZiyadahSubmit)}>
           <div className="p-6 space-y-4">
@@ -799,7 +833,11 @@ export default function HalaqahDetailPage() {
                 render={({ field }) => (
                   <Select
                     options={santriOptionsSelect}
-                    value={santriOptionsSelect.find((option) => option.value === field.value) || null}
+                    value={
+                      santriOptionsSelect.find(
+                        (option) => option.value === field.value,
+                      ) || null
+                    }
                     onChange={(option) => field.onChange(option?.value ?? 0)}
                     placeholder="Pilih Santri..."
                     classNamePrefix="react-select"
@@ -812,7 +850,9 @@ export default function HalaqahDetailPage() {
                 )}
               />
               {errorsZiyadah.santri_id && (
-                <p className="mt-2 text-xs text-red-600">{errorsZiyadah.santri_id.message}</p>
+                <p className="mt-2 text-xs text-red-600">
+                  {errorsZiyadah.santri_id.message}
+                </p>
               )}
             </div>
 
@@ -847,7 +887,11 @@ export default function HalaqahDetailPage() {
       <Modal
         isOpen={isMurojaahModalOpen}
         onClose={() => setIsMurojaahModalOpen(false)}
-        title={murojaahModalMode === "create" ? "Tambah Tsunnaiyyah Baru" : "Edit Data Tsunnaiyyah"}
+        title={
+          murojaahModalMode === "create"
+            ? "Tambah Tsunnaiyyah Baru"
+            : "Edit Data Tsunnaiyyah"
+        }
       >
         <form onSubmit={handleSubmitMurojaah(handleMurojaahSubmit)}>
           <div className="p-6 space-y-4">
@@ -868,7 +912,11 @@ export default function HalaqahDetailPage() {
                 render={({ field }) => (
                   <Select
                     options={santriOptionsSelect}
-                    value={santriOptionsSelect.find((option) => option.value === field.value) || null}
+                    value={
+                      santriOptionsSelect.find(
+                        (option) => option.value === field.value,
+                      ) || null
+                    }
                     onChange={(option) => field.onChange(option?.value ?? 0)}
                     placeholder="Pilih Santri..."
                     classNamePrefix="react-select"
@@ -881,7 +929,9 @@ export default function HalaqahDetailPage() {
                 )}
               />
               {errorsMurojaah.santri_id && (
-                <p className="mt-2 text-xs text-red-600">{errorsMurojaah.santri_id.message}</p>
+                <p className="mt-2 text-xs text-red-600">
+                  {errorsMurojaah.santri_id.message}
+                </p>
               )}
             </div>
 
