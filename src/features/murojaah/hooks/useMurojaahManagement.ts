@@ -13,6 +13,7 @@ import {
 } from "../repository";
 import { Murojaah, SantriOption } from "../types";
 import { Halaqah } from "@/features/halaqah/types";
+import type { MurojaahFormValues } from "../schemas";
 
 export function useMurojaahManagement() {
   const [murojaah, setMurojaah] = useState<Murojaah[]>([]);
@@ -70,13 +71,7 @@ export function useMurojaahManagement() {
     setIsModalOpen(true);
   }, []);
 
-  const onSubmit = useCallback(async (values: {
-    santri_id: number;
-    date: string;
-    surat: number;
-    ayat_mulai: number;
-    ayat_selesai: number;
-  }) => {
+  const onSubmit = useCallback(async (values: MurojaahFormValues) => {
     setFormError(null);
     setSubmitLoading(true);
 

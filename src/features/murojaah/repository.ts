@@ -34,7 +34,8 @@ export async function createMurojaah(payload: Omit<Murojaah, "id" | "name" | "cl
     body: JSON.stringify(payload),
   });
   const data = await handleJson<{ murojaah?: Murojaah }>(response);
-  return data.murojaah || ({} as Murojaah);
+  if (!data.murojaah) throw new Error("Respons tidak memuat data murojaah.");
+  return data.murojaah;
 }
 
 export async function updateMurojaah(id: number, payload: Omit<Murojaah, "id" | "name" | "class" | "halaqah_name">): Promise<Murojaah> {
@@ -44,7 +45,8 @@ export async function updateMurojaah(id: number, payload: Omit<Murojaah, "id" | 
     body: JSON.stringify(payload),
   });
   const data = await handleJson<{ murojaah?: Murojaah }>(response);
-  return data.murojaah || ({} as Murojaah);
+  if (!data.murojaah) throw new Error("Respons tidak memuat data murojaah.");
+  return data.murojaah;
 }
 
 export async function deleteMurojaah(id: number): Promise<void> {

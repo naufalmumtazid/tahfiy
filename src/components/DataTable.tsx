@@ -27,6 +27,8 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   placeholderSearch?: string;
   renderTopActions?: () => React.ReactNode;
+  enablePagination?: boolean;
+  emptyMessage?: string;
   loading?: boolean;
 }
 
@@ -35,6 +37,8 @@ export default function DataTable<TData, TValue>({
   data,
   placeholderSearch = "Cari data...",
   renderTopActions,
+  enablePagination = true,
+  emptyMessage = "Tidak ada data ditemukan.",
   loading = false,
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState("");
@@ -53,7 +57,9 @@ export default function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getPaginationRowModel: enablePagination
+      ? getPaginationRowModel()
+      : undefined,
     initialState: {
       pagination: {
         pageSize: 10, // Default baris per halaman
@@ -154,7 +160,7 @@ export default function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="py-10 text-center text-gray-400"
                 >
-                  Tidak ada data ditemukan.
+                  {emptyMessage}
                 </td>
               </tr>
             ) : (
@@ -179,7 +185,7 @@ export default function DataTable<TData, TValue>({
       </div>
 
       {/* Pagination Controls */}
-      {!loading && table.getPageCount() > 0 && (
+      {!loading && enablePagination && table.getPageCount() > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-blue-50/50 text-gray-500 text-xs font-medium">
           <div className="flex items-center gap-2 min-w-55">
             <span>Tampilkan</span>

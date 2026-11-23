@@ -12,7 +12,6 @@ import {
   FiTrash2,
   FiUserPlus,
   FiAlertCircle,
-  FiUsers,
   FiBookOpen,
   FiCalendar,
 } from "react-icons/fi";
@@ -20,7 +19,18 @@ import Header from "@/components/Header";
 import DataTable from "@/components/DataTable";
 import Modal from "@/components/Modal";
 import { getErrorMessage } from "@/utils/error";
-import { getSuratName, suratOptions } from "@/utils/surat";
+import { getSuratName } from "@/utils/surat";
+import { HafalanRangeFields } from "@/features/hafalan/components/HafalanRangeFields";
+import { HalaqahSectionTabs } from "@/features/hafalan/components/HalaqahSectionTabs";
+import { WeeklySantriSummary } from "@/features/hafalan/components/WeeklySantriSummary";
+import { useWeeklyExam } from "@/features/hafalan/hooks/useWeeklyExam";
+import {
+  getCurrentWeekStart,
+  getDefaultHafalanDate,
+  formatHafalanDate,
+  getWeekRange,
+  summarizePages,
+} from "@/features/hafalan/weekly";
 
 // Halaqah Imports
 import { SantriFormModal } from "@/features/halaqah/components/SantriFormModal";
@@ -71,6 +81,8 @@ export default function HalaqahDetailPage() {
   const [santri, setSantri] = useState<SantriItem[]>([]);
   const [ziyadahList, setZiyadahList] = useState<ZiyadahType[]>([]);
   const [murojaahList, setMurojaahList] = useState<MurojaahType[]>([]);
+  const [selectedRecordSantri, setSelectedRecordSantri] =
+    useState<SantriItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -101,14 +113,18 @@ export default function HalaqahDetailPage() {
     control: controlZiyadah,
     handleSubmit: handleSubmitZiyadah,
     reset: resetZiyadah,
+    setValue: setValueZiyadah,
+    watch: watchZiyadah,
     formState: { errors: errorsZiyadah },
   } = useForm<ZiyadahFormValues>({
     defaultValues: {
       santri_id: 0,
-      date: new Date().toISOString().split("T")[0],
+      date: "",
       surat: 1,
+      surat_selesai: null,
       ayat_mulai: 1,
       ayat_selesai: 1,
+      jumlah_halaman: 0,
     },
   });
 
@@ -117,16 +133,31 @@ export default function HalaqahDetailPage() {
     control: controlMurojaah,
     handleSubmit: handleSubmitMurojaah,
     reset: resetMurojaah,
+    setValue: setValueMurojaah,
+    watch: watchMurojaah,
     formState: { errors: errorsMurojaah },
   } = useForm<MurojaahFormValues>({
     defaultValues: {
       santri_id: 0,
-      date: new Date().toISOString().split("T")[0],
+      date: "",
       surat: 1,
+      surat_selesai: null,
       ayat_mulai: 1,
       ayat_selesai: 1,
+      jumlah_halaman: 0,
     },
   });
+
+  const [currentWeekStart] = useState(getCurrentWeekStart);
+  const [selectedWeekStart, setSelectedWeekStart] =
+    useState(currentWeekStart);
+
+  const {
+    passed: examPassed,
+    loading: examLoading,
+    error: examError,
+    toggle: toggleExam,
+  } = useWeeklyExam(selectedRecordSantri?.id ?? null, selectedWeekStart);
 
   // Load All Data
 // Load All Data
@@ -207,6 +238,12 @@ export default function HalaqahDetailPage() {
       // Refresh list
       const updatedList = await fetchSantriByHalaqah(halaqahId);
       setSantri(updatedList);
+      if (selectedRecordSantri) {
+        setSelectedRecordSantri(
+          updatedList.find((item) => item.id === selectedRecordSantri.id) ??
+            null,
+        );
+      }
     } catch (err) {
       setSantriFormError(getErrorMessage(err));
     } finally {
@@ -221,6 +258,10 @@ export default function HalaqahDetailPage() {
       toast.success(`Santri "${row.name}" berhasil dihapus.`);
       const updatedList = await fetchSantriByHalaqah(halaqahId);
       setSantri(updatedList);
+      if (selectedRecordSantri?.id === row.id) {
+        setSelectedRecordSantri(null);
+        setActiveTab("santri");
+      }
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -231,11 +272,13 @@ export default function HalaqahDetailPage() {
     setZiyadahModalMode("create");
     setSelectedZiyadah(null);
     resetZiyadah({
-      santri_id: santri[0]?.id ?? 0,
-      date: new Date().toISOString().split("T")[0],
+      santri_id: selectedRecordSantri?.id ?? santri[0]?.id ?? 0,
+      date: getDefaultHafalanDate(),
       surat: 1,
+      surat_selesai: null,
       ayat_mulai: 1,
       ayat_selesai: 1,
+      jumlah_halaman: 0,
     });
     setZiyadahFormError(null);
     setIsZiyadahModalOpen(true);
@@ -248,8 +291,10 @@ export default function HalaqahDetailPage() {
       santri_id: item.santri_id,
       date: item.date,
       surat: item.surat,
+      surat_selesai: item.surat_selesai,
       ayat_mulai: item.ayat_mulai,
       ayat_selesai: item.ayat_selesai,
+      jumlah_halaman: item.jumlah_halaman ?? 0,
     });
     setZiyadahFormError(null);
     setIsZiyadahModalOpen(true);
@@ -271,8 +316,10 @@ export default function HalaqahDetailPage() {
         santri_id: result.data.santri_id,
         date: result.data.date,
         surat: result.data.surat,
+        surat_selesai: result.data.surat_selesai,
         ayat_mulai: result.data.ayat_mulai,
         ayat_selesai: result.data.ayat_selesai,
+        jumlah_halaman: result.data.jumlah_halaman,
       };
 
       if (ziyadahModalMode === "create") {
@@ -313,11 +360,13 @@ export default function HalaqahDetailPage() {
     setMurojaahModalMode("create");
     setSelectedMurojaah(null);
     resetMurojaah({
-      santri_id: santri[0]?.id ?? 0,
-      date: new Date().toISOString().split("T")[0],
+      santri_id: selectedRecordSantri?.id ?? santri[0]?.id ?? 0,
+      date: getDefaultHafalanDate(),
       surat: 1,
+      surat_selesai: null,
       ayat_mulai: 1,
       ayat_selesai: 1,
+      jumlah_halaman: 0,
     });
     setMurojaahFormError(null);
     setIsMurojaahModalOpen(true);
@@ -330,8 +379,10 @@ export default function HalaqahDetailPage() {
       santri_id: item.santri_id,
       date: item.date,
       surat: item.surat,
+      surat_selesai: item.surat_selesai,
       ayat_mulai: item.ayat_mulai,
       ayat_selesai: item.ayat_selesai,
+      jumlah_halaman: item.jumlah_halaman ?? 0,
     });
     setMurojaahFormError(null);
     setIsMurojaahModalOpen(true);
@@ -353,8 +404,10 @@ export default function HalaqahDetailPage() {
         santri_id: result.data.santri_id,
         date: result.data.date,
         surat: result.data.surat,
+        surat_selesai: result.data.surat_selesai,
         ayat_mulai: result.data.ayat_mulai,
         ayat_selesai: result.data.ayat_selesai,
+        jumlah_halaman: result.data.jumlah_halaman,
       };
 
       if (murojaahModalMode === "create") {
@@ -389,6 +442,28 @@ export default function HalaqahDetailPage() {
       toast.error(getErrorMessage(err));
     }
   };
+
+  const visibleZiyadah = selectedRecordSantri
+    ? ziyadahList.filter((item) => item.santri_id === selectedRecordSantri.id)
+    : [];
+  const visibleMurojaah = selectedRecordSantri
+    ? murojaahList.filter((item) => item.santri_id === selectedRecordSantri.id)
+    : [];
+  const weekEnd = selectedWeekStart
+    ? getWeekRange(selectedWeekStart).end
+    : "";
+  const weeklyZiyadah = visibleZiyadah.filter(
+    (item) => item.date >= selectedWeekStart && item.date <= weekEnd,
+  ).sort((first, second) =>
+    first.date.localeCompare(second.date) || first.id - second.id,
+  );
+  const weeklyMurojaah = visibleMurojaah.filter(
+    (item) => item.date >= selectedWeekStart && item.date <= weekEnd,
+  ).sort((first, second) =>
+    first.date.localeCompare(second.date) || first.id - second.id,
+  );
+  const ziyadahPageSummary = summarizePages(weeklyZiyadah);
+  const murojaahPageSummary = summarizePages(weeklyMurojaah);
 
   if (loading) {
     return (
@@ -438,71 +513,26 @@ export default function HalaqahDetailPage() {
         showSearch={false}
       />
 
-      {/* 3 Big Premium Card Buttons */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <button
-          onClick={() => setActiveTab("santri")}
-          className={`p-6 rounded-3xl border text-left transition-all cursor-pointer ${
-            activeTab === "santri"
-              ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20"
-              : "bg-white border-blue-100 text-gray-800 hover:border-blue-200 hover:shadow-sm"
-          }`}
-        >
-          <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-2xl ${activeTab === "santri" ? "bg-white/15" : "bg-blue-50 text-blue-600"}`}>
-              <FiUsers className="w-6 h-6" />
-            </div>
-            <div>
-              <p className={`text-xs font-semibold uppercase tracking-wider ${activeTab === "santri" ? "text-blue-100" : "text-gray-400"}`}>
-                Informasi
-              </p>
-              <h4 className="text-lg font-bold mt-0.5">Data Santri</h4>
-            </div>
-          </div>
-        </button>
+      <HalaqahSectionTabs activeTab={activeTab} onChange={setActiveTab} />
 
-        <button
-          onClick={() => setActiveTab("ziyadah")}
-          className={`p-6 rounded-3xl border text-left transition-all cursor-pointer ${
-            activeTab === "ziyadah"
-              ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20"
-              : "bg-white border-blue-100 text-gray-800 hover:border-blue-200 hover:shadow-sm"
-          }`}
-        >
-          <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-2xl ${activeTab === "ziyadah" ? "bg-white/15" : "bg-blue-50 text-blue-600"}`}>
-              <FiBookOpen className="w-6 h-6" />
-            </div>
-            <div>
-              <p className={`text-xs font-semibold uppercase tracking-wider ${activeTab === "ziyadah" ? "text-blue-100" : "text-gray-400"}`}>
-                Setoran Baru
-              </p>
-              <h4 className="text-lg font-bold mt-0.5">Menu Ziyadah</h4>
-            </div>
-          </div>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("murojaah")}
-          className={`p-6 rounded-3xl border text-left transition-all cursor-pointer ${
-            activeTab === "murojaah"
-              ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20"
-              : "bg-white border-blue-100 text-gray-800 hover:border-blue-200 hover:shadow-sm"
-          }`}
-        >
-          <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-2xl ${activeTab === "murojaah" ? "bg-white/15" : "bg-blue-50 text-blue-600"}`}>
-              <FiCalendar className="w-6 h-6" />
-            </div>
-            <div>
-              <p className={`text-xs font-semibold uppercase tracking-wider ${activeTab === "murojaah" ? "text-blue-100" : "text-gray-400"}`}>
-                Tsunnaiyyah Hafalan
-              </p>
-              <h4 className="text-lg font-bold mt-0.5">Menu Tsunnaiyyah</h4>
-            </div>
-          </div>
-        </button>
-      </div>
+      {selectedRecordSantri &&
+        (activeTab === "ziyadah" || activeTab === "murojaah") && (
+          <WeeklySantriSummary
+            santri={selectedRecordSantri}
+            weekStart={selectedWeekStart}
+            currentWeekStart={currentWeekStart}
+            ziyadahPages={ziyadahPageSummary.total}
+            ziyadahUncounted={ziyadahPageSummary.uncounted}
+            murojaahPages={murojaahPageSummary.total}
+            murojaahUncounted={murojaahPageSummary.uncounted}
+            examPassed={examPassed}
+            examLoading={examLoading}
+            examError={examError}
+            onToggleExam={toggleExam}
+            onChangeWeek={setSelectedWeekStart}
+            onChangeSantri={() => setActiveTab("santri")}
+          />
+        )}
 
       {/* Dynamic Tables rendering depending on active tab */}
       {activeTab === "santri" && (
@@ -529,6 +559,30 @@ export default function HalaqahDetailPage() {
               header: "Aksi",
               cell: ({ row }) => (
                 <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedRecordSantri(row.original);
+                      setActiveTab("ziyadah");
+                    }}
+                    className="rounded-xl p-2 text-cyan-700 transition hover:bg-cyan-50"
+                    title={`Lihat Ziyadah ${row.original.name}`}
+                    aria-label={`Lihat Ziyadah ${row.original.name}`}
+                  >
+                    <FiBookOpen className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedRecordSantri(row.original);
+                      setActiveTab("murojaah");
+                    }}
+                    className="rounded-xl p-2 text-cyan-600 transition hover:bg-cyan-50"
+                    title={`Lihat Tsunnaiyyah ${row.original.name}`}
+                    aria-label={`Lihat Tsunnaiyyah ${row.original.name}`}
+                  >
+                    <FiCalendar className="h-4 w-4" />
+                  </button>
                   <button
                     onClick={() => openEditSantri(row.original)}
                     className="rounded-xl p-2 text-blue-600 hover:bg-blue-50 transition cursor-pointer"
@@ -564,17 +618,32 @@ export default function HalaqahDetailPage() {
       {activeTab === "ziyadah" && (
         <DataTable
           columns={[
-            { header: "ID", accessorKey: "id" },
-            { header: "Nama Santri", accessorKey: "name" },
-            { header: "Kelas", accessorKey: "class" },
-            { header: "Tanggal", accessorKey: "date" },
+            {
+              header: "No",
+              cell: ({ row }) => row.index + 1,
+            },
+            {
+              header: "Tanggal",
+              accessorKey: "date",
+              cell: ({ row }) => formatHafalanDate(row.original.date),
+            },
             {
               header: "Surat / Ayat",
               cell: ({ row }) => (
                 <span>
-                  Surat {row.original.surat}: {getSuratName(row.original.surat)} (Ayat {row.original.ayat_mulai}-{row.original.ayat_selesai})
+                  {getSuratName(row.original.surat)} ayat{" "}
+                  {row.original.ayat_mulai} –{" "}
+                  {getSuratName(row.original.surat_selesai ?? row.original.surat)}{" "}
+                  ayat {row.original.ayat_selesai}
                 </span>
               ),
+            },
+            {
+              header: "Halaman",
+              cell: ({ row }) =>
+                row.original.jumlah_halaman == null
+                  ? "Belum dicatat"
+                  : `${row.original.jumlah_halaman} halaman`,
             },
             {
               header: "Aksi",
@@ -598,11 +667,18 @@ export default function HalaqahDetailPage() {
               ),
             },
           ]}
-          data={ziyadahList}
+          data={weeklyZiyadah}
+          enablePagination={false}
           placeholderSearch="Cari ziyadah..."
+          emptyMessage={
+            selectedRecordSantri
+              ? "Belum ada ziyadah pada pekan ini."
+              : "Pilih santri dari daftar untuk melihat record pekanan."
+          }
           renderTopActions={() => (
             <button
               onClick={openCreateZiyadah}
+              disabled={!selectedRecordSantri || ziyadahSubmitLoading}
               className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 cursor-pointer hover:bg-blue-700 transition active:scale-95 shrink-0"
             >
               <FiUserPlus className="h-4 w-4" />
@@ -615,17 +691,32 @@ export default function HalaqahDetailPage() {
       {activeTab === "murojaah" && (
         <DataTable
           columns={[
-            { header: "ID", accessorKey: "id" },
-            { header: "Nama Santri", accessorKey: "name" },
-            { header: "Kelas", accessorKey: "class" },
-            { header: "Tanggal", accessorKey: "date" },
+            {
+              header: "No",
+              cell: ({ row }) => row.index + 1,
+            },
+            {
+              header: "Tanggal",
+              accessorKey: "date",
+              cell: ({ row }) => formatHafalanDate(row.original.date),
+            },
             {
               header: "Surat / Ayat",
               cell: ({ row }) => (
                 <span>
-                  Surat {row.original.surat}: {getSuratName(row.original.surat)} (Ayat {row.original.ayat_mulai}-{row.original.ayat_selesai})
+                  {getSuratName(row.original.surat)} ayat{" "}
+                  {row.original.ayat_mulai} –{" "}
+                  {getSuratName(row.original.surat_selesai ?? row.original.surat)}{" "}
+                  ayat {row.original.ayat_selesai}
                 </span>
               ),
+            },
+            {
+              header: "Halaman",
+              cell: ({ row }) =>
+                row.original.jumlah_halaman == null
+                  ? "Belum dicatat"
+                  : `${row.original.jumlah_halaman} halaman`,
             },
             {
               header: "Aksi",
@@ -649,11 +740,18 @@ export default function HalaqahDetailPage() {
               ),
             },
           ]}
-          data={murojaahList}
+          data={weeklyMurojaah}
+          enablePagination={false}
           placeholderSearch="Cari tsunnaiyyah..."
+          emptyMessage={
+            selectedRecordSantri
+              ? "Belum ada Tsunnaiyyah pada pekan ini."
+              : "Pilih santri dari daftar untuk melihat record pekanan."
+          }
           renderTopActions={() => (
             <button
               onClick={openCreateMurojaah}
+              disabled={!selectedRecordSantri || murojaahSubmitLoading}
               className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 cursor-pointer hover:bg-blue-700 transition active:scale-95 shrink-0"
             >
               <FiUserPlus className="h-4 w-4" />
@@ -707,6 +805,9 @@ export default function HalaqahDetailPage() {
                     classNamePrefix="react-select"
                     className="text-sm"
                     isClearable={false}
+                    isDisabled={
+                      ziyadahModalMode === "create" && !!selectedRecordSantri
+                    }
                   />
                 )}
               />
@@ -715,68 +816,12 @@ export default function HalaqahDetailPage() {
               )}
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Tanggal <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                {...registerZiyadah("date")}
-                className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none text-sm text-gray-800"
-              />
-              {errorsZiyadah.date && (
-                <p className="mt-2 text-xs text-red-600">{errorsZiyadah.date.message}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  Surat <span className="text-red-500">*</span>
-                </label>
-                <select
-                  {...registerZiyadah("surat", { valueAsNumber: true })}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-800"
-                >
-                  {suratOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {errorsZiyadah.surat && (
-                  <p className="mt-2 text-xs text-red-600">{errorsZiyadah.surat.message}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  Ayat Mulai <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  {...registerZiyadah("ayat_mulai", { valueAsNumber: true })}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-800"
-                />
-                {errorsZiyadah.ayat_mulai && (
-                  <p className="mt-2 text-xs text-red-600">{errorsZiyadah.ayat_mulai.message}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  Ayat Selesai <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  {...registerZiyadah("ayat_selesai", { valueAsNumber: true })}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-800"
-                />
-                {errorsZiyadah.ayat_selesai && (
-                  <p className="mt-2 text-xs text-red-600">{errorsZiyadah.ayat_selesai.message}</p>
-                )}
-              </div>
-            </div>
+            <HafalanRangeFields
+              register={registerZiyadah}
+              setValue={setValueZiyadah}
+              watch={watchZiyadah}
+              errors={errorsZiyadah}
+            />
           </div>
 
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 rounded-b-3xl flex justify-end gap-3">
@@ -829,6 +874,9 @@ export default function HalaqahDetailPage() {
                     classNamePrefix="react-select"
                     className="text-sm"
                     isClearable={false}
+                    isDisabled={
+                      murojaahModalMode === "create" && !!selectedRecordSantri
+                    }
                   />
                 )}
               />
@@ -837,68 +885,12 @@ export default function HalaqahDetailPage() {
               )}
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Tanggal <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                {...registerMurojaah("date")}
-                className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none text-sm text-gray-800"
-              />
-              {errorsMurojaah.date && (
-                <p className="mt-2 text-xs text-red-600">{errorsMurojaah.date.message}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  Surat <span className="text-red-500">*</span>
-                </label>
-                <select
-                  {...registerMurojaah("surat", { valueAsNumber: true })}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-800"
-                >
-                  {suratOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {errorsMurojaah.surat && (
-                  <p className="mt-2 text-xs text-red-600">{errorsMurojaah.surat.message}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  Ayat Mulai <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  {...registerMurojaah("ayat_mulai", { valueAsNumber: true })}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-800"
-                />
-                {errorsMurojaah.ayat_mulai && (
-                  <p className="mt-2 text-xs text-red-600">{errorsMurojaah.ayat_mulai.message}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  Ayat Selesai <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  {...registerMurojaah("ayat_selesai", { valueAsNumber: true })}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-800"
-                />
-                {errorsMurojaah.ayat_selesai && (
-                  <p className="mt-2 text-xs text-red-600">{errorsMurojaah.ayat_selesai.message}</p>
-                )}
-              </div>
-            </div>
+            <HafalanRangeFields
+              register={registerMurojaah}
+              setValue={setValueMurojaah}
+              watch={watchMurojaah}
+              errors={errorsMurojaah}
+            />
           </div>
 
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 rounded-b-3xl flex justify-end gap-3">

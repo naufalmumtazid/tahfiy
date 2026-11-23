@@ -33,7 +33,8 @@ export async function createZiyadah(payload: Omit<Ziyadah, "id" | "name" | "clas
     body: JSON.stringify(payload),
   });
   const data = await handleJson<{ ziyadah?: Ziyadah }>(response);
-  return data.ziyadah || ({} as Ziyadah);
+  if (!data.ziyadah) throw new Error("Respons tidak memuat data ziyadah.");
+  return data.ziyadah;
 }
 
 export async function updateZiyadah(id: number, payload: Omit<Ziyadah, "id" | "name" | "class" | "halaqah_name">): Promise<Ziyadah> {
@@ -43,7 +44,8 @@ export async function updateZiyadah(id: number, payload: Omit<Ziyadah, "id" | "n
     body: JSON.stringify(payload),
   });
   const data = await handleJson<{ ziyadah?: Ziyadah }>(response);
-  return data.ziyadah || ({} as Ziyadah);
+  if (!data.ziyadah) throw new Error("Respons tidak memuat data ziyadah.");
+  return data.ziyadah;
 }
 
 export async function deleteZiyadah(id: number): Promise<void> {

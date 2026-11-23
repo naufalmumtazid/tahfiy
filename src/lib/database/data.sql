@@ -47,18 +47,33 @@ CREATE TABLE ziyadah (
     santri_id INTEGER NOT NULL,
     date DATE NOT NULL,
     surat INTEGER NOT NULL, -- Quranic surat (1-114)
+    surat_selesai INTEGER CHECK (surat_selesai IS NULL OR surat_selesai BETWEEN surat AND 114),
     ayat_mulai INTEGER NOT NULL,
     ayat_selesai INTEGER NOT NULL,
+    jumlah_halaman INTEGER CHECK (jumlah_halaman IS NULL OR jumlah_halaman > 0),
+    CHECK (EXTRACT(ISODOW FROM date) <> 6),
     FOREIGN KEY (santri_id) REFERENCES santri(id) ON DELETE CASCADE
 );
 
--- Table: murajaah (review/repetition of memorized pages)
-CREATE TABLE murajaah (
+-- Table: murojaah (review/repetition of memorized pages)
+CREATE TABLE murojaah (
     id SERIAL PRIMARY KEY,
     santri_id INTEGER NOT NULL,
     date DATE NOT NULL,
     surat INTEGER NOT NULL, -- Quranic surat (1-114)
+    surat_selesai INTEGER CHECK (surat_selesai IS NULL OR surat_selesai BETWEEN surat AND 114),
     ayat_mulai INTEGER NOT NULL,
     ayat_selesai INTEGER NOT NULL,
+    jumlah_halaman INTEGER CHECK (jumlah_halaman IS NULL OR jumlah_halaman > 0),
+    CHECK (EXTRACT(ISODOW FROM date) <> 6),
+    FOREIGN KEY (santri_id) REFERENCES santri(id) ON DELETE CASCADE
+);
+
+-- A row means the santri passed the weekly exam; deleting it reverses the mark.
+CREATE TABLE ujian_mingguan (
+    santri_id INTEGER NOT NULL,
+    week_start DATE NOT NULL CHECK (EXTRACT(ISODOW FROM week_start) = 1),
+    passed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (santri_id, week_start),
     FOREIGN KEY (santri_id) REFERENCES santri(id) ON DELETE CASCADE
 );
