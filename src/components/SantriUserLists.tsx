@@ -123,19 +123,27 @@ export default function SantriUserLists({ murojaah, ziyadah }: Props) {
       {activeTab === "murojaah" ? (
         <div>
           <h2 className="mb-3 text-lg font-semibold">Murojaah</h2>
+          <p className="mb-2 text-xs text-gray-500 sm:hidden">
+            Geser tabel ke samping untuk melihat semua kolom.
+          </p>
           <DataTable
             columns={murojaahColumns}
             data={murojaah}
             placeholderSearch="Cari murojaah..."
+            tableClassName="min-w-[700px]"
           />
         </div>
       ) : (
         <div>
           <h2 className="mb-3 text-lg font-semibold">Ziyadah</h2>
+          <p className="mb-2 text-xs text-gray-500 sm:hidden">
+            Geser tabel ke samping untuk melihat semua kolom.
+          </p>
           <DataTable
             columns={ziyadahColumns}
             data={ziyadah}
             placeholderSearch="Cari ziyadah..."
+            tableClassName="min-w-[700px]"
           />
         </div>
       )}

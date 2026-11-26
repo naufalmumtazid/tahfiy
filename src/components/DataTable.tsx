@@ -30,6 +30,7 @@ interface DataTableProps<TData, TValue> {
   enablePagination?: boolean;
   emptyMessage?: string;
   loading?: boolean;
+  tableClassName?: string;
 }
 
 export default function DataTable<TData, TValue>({
@@ -40,6 +41,7 @@ export default function DataTable<TData, TValue>({
   enablePagination = true,
   emptyMessage = "Tidak ada data ditemukan.",
   loading = false,
+  tableClassName = "",
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -68,7 +70,7 @@ export default function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="bg-white rounded-3xl border border-blue-100 shadow-sm p-6 overflow-hidden">
+    <div className="bg-white rounded-3xl border border-blue-100 shadow-sm p-3 sm:p-6 overflow-hidden">
       {/* Top Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="relative flex-1 max-w-md">
@@ -88,7 +90,7 @@ export default function DataTable<TData, TValue>({
 
       {/* Table Container */}
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className={`w-full text-sm ${tableClassName}`}>
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr
@@ -187,7 +189,7 @@ export default function DataTable<TData, TValue>({
       {/* Pagination Controls */}
       {!loading && enablePagination && table.getPageCount() > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-blue-50/50 text-gray-500 text-xs font-medium">
-          <div className="flex items-center gap-2 min-w-55">
+          <div className="flex flex-wrap items-center gap-2 sm:min-w-55">
             <span>Tampilkan</span>
             <div className="w-32">
               <Select
@@ -204,7 +206,7 @@ export default function DataTable<TData, TValue>({
                 classNamePrefix="react-select"
               />
             </div>
-            <span className="text-gray-400 ml-2">
+            <span className="text-gray-400 sm:ml-2">
               Menampilkan {table.getRowModel().rows.length} dari {data.length}{" "}
               entri
             </span>
