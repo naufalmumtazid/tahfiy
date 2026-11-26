@@ -5,6 +5,7 @@ import DataTable from "@/components/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { Murojaah } from "@/features/murojaah/types";
 import { Ziyadah } from "@/features/ziyadah/types";
+import { formatHafalanDate } from "@/features/hafalan/weekly";
 import { getSuratName } from "@/utils/surat";
 
 type Props = {
@@ -24,7 +25,7 @@ export default function SantriUserLists({ murojaah, ziyadah }: Props) {
     {
       accessorKey: "date",
       header: "Tanggal",
-      cell: (info) => new Date(info.getValue() as string).toLocaleDateString(),
+      cell: ({ row }) => formatHafalanDate(row.original.date),
     },
     {
       header: "Surat",
@@ -46,7 +47,7 @@ export default function SantriUserLists({ murojaah, ziyadah }: Props) {
     {
       accessorKey: "date",
       header: "Tanggal",
-      cell: (info) => new Date(info.getValue() as string).toLocaleDateString(),
+      cell: ({ row }) => formatHafalanDate(row.original.date),
     },
     {
       header: "Surat",
