@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/database/supabase/server";
 import { getErrorMessage } from "@/utils/error";
 import { checkIsAuthorized } from "@/utils/auth"; // <-- Gunakan helper andalan proyekmu
+import { murojaahSchema } from "@/features/murojaah/schemas";
 
 const ALLOWED_ROLES = ["admin", "ustadz", "santri"]; // Tentukan role apa saja yang diizinkan
 
@@ -23,7 +24,7 @@ export async function GET() {
     let query = supabase
       .from("murojaah")
       .select(
-        `id, santri_id, date, surat, ayat_mulai, ayat_selesai, santri(id, class, halaqah(name), users(name))`
+        `id, santri_id, date, surat, surat_selesai, ayat_mulai, ayat_selesai, jumlah_halaman, santri(id, class, halaqah(name), users(name))`
       )
       .order("id", { ascending: true });
 
@@ -62,8 +63,10 @@ export async function GET() {
         santri_id: m.santri_id as number,
         date: m.date as string,
         surat: m.surat as number,
+        surat_selesai: m.surat_selesai == null ? null : Number(m.surat_selesai),
         ayat_mulai: m.ayat_mulai as number,
         ayat_selesai: m.ayat_selesai as number,
+        jumlah_halaman: m.jumlah_halaman == null ? null : Number(m.jumlah_halaman),
         name: userName ?? "-",
         class: (santri?.class as string) || "-",
         halaqah_name: halaqahName ?? "-",
@@ -84,11 +87,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
     }
 
-    const body = await request.json();
-    const { santri_id, date, surat, ayat_mulai, ayat_selesai } = body;
-
-    if (!santri_id || !date || !surat || !ayat_mulai || !ayat_selesai) {
-      return NextResponse.json({ error: "Semua field wajib diisi." }, { status: 400 });
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Body request tidak valid." }, { status: 400 });
+    }
+    const parsed = murojaahSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues.map((issue) => issue.message).join(". ") },
+        { status: 400 },
+      );
     }
 
     const cookieStore = await cookies();
@@ -96,16 +106,8 @@ export async function POST(request: Request) {
 
     const { data: newMurojaah, error } = await supabase
       .from("murojaah")
-      .insert([
-        {
-          santri_id,   // Langsung panggil variabel murni (tidak perlu parseInt jika dari frontend sudah memakai z.coerce)
-          date,
-          surat,
-          ayat_mulai,
-          ayat_selesai,
-        },
-      ])
-      .select("id, santri_id, date, surat, ayat_mulai, ayat_selesai, santri(id, class, halaqah(name), users(name))")
+      .insert([parsed.data])
+      .select("id, santri_id, date, surat, surat_selesai, ayat_mulai, ayat_selesai, jumlah_halaman, santri(id, class, halaqah(name), users(name))")
       .single();
 
     if (error || !newMurojaah) {
@@ -127,8 +129,10 @@ export async function POST(request: Request) {
       santri_id: m.santri_id as number,
       date: m.date as string,
       surat: m.surat as number,
+      surat_selesai: m.surat_selesai == null ? null : Number(m.surat_selesai),
       ayat_mulai: m.ayat_mulai as number,
       ayat_selesai: m.ayat_selesai as number,
+      jumlah_halaman: m.jumlah_halaman == null ? null : Number(m.jumlah_halaman),
       name: userName ?? "-",
       class: (santri?.class as string) || "-",
       halaqah_name: halaqahName ?? "-",

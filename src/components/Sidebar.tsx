@@ -38,6 +38,7 @@ const ustadzMenuItems: SidebarItemType[] = [
 
 const santriMenuItems: SidebarItemType[]  = [
     { id: "dashboard", label: "Dashboard", icon: MdDashboard, href: "/santri" },
+    { id: "hafalan", label: "Hafalan", icon: MdOutlineNotes, href: "/santri/hafalan" },
 ];
 
 

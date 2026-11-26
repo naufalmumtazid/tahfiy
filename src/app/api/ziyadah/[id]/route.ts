@@ -3,14 +3,17 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/database/supabase/server";
 import { getErrorMessage } from "@/utils/error";
 import { checkIsAuthorized } from "@/utils/auth";
+import { ziyadahSchema } from "@/features/ziyadah/schemas";
 
 interface SupabaseZiyadahRow {
   id: number;
   santri_id: number;
   date: string;
   surat: number;
+  surat_selesai: number | null;
   ayat_mulai: number;
   ayat_selesai: number;
+  jumlah_halaman: number | null;
   santri?: Array<{
     class?: string;
     halaqah?: Array<{ name?: string }>;
@@ -23,8 +26,10 @@ interface FormattedZiyadah {
   santri_id: number;
   date: string;
   surat: number;
+  surat_selesai: number | null;
   ayat_mulai: number;
   ayat_selesai: number;
+  jumlah_halaman: number | null;
   name: string;
   class: string;
   halaqah_name: string;
@@ -38,8 +43,10 @@ function formatZiyadahResponse(data: SupabaseZiyadahRow): FormattedZiyadah {
     santri_id: data.santri_id,
     date: data.date,
     surat: data.surat,
+    surat_selesai: data.surat_selesai,
     ayat_mulai: data.ayat_mulai,
     ayat_selesai: data.ayat_selesai,
+    jumlah_halaman: data.jumlah_halaman,
     name: targetSantri?.users?.[0]?.name ?? "",
     class: targetSantri?.class ?? "",
     halaqah_name: targetSantri?.halaqah?.[0]?.name ?? "",
@@ -63,11 +70,18 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized access" }, { status: 403 });
     }
 
-    const body = await request.json();
-    const { santri_id, date, surat, ayat_mulai, ayat_selesai } = body;
-
-    if (!santri_id || !date || !surat || !ayat_mulai || !ayat_selesai) {
-      return NextResponse.json({ error: "Semua field wajib diisi." }, { status: 400 });
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Body request tidak valid." }, { status: 400 });
+    }
+    const parsed = ziyadahSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues.map((issue) => issue.message).join(". ") },
+        { status: 400 },
+      );
     }
 
     const cookieStore = await cookies();
@@ -85,15 +99,9 @@ export async function PUT(
 
     const { data: updated, error } = await supabase
       .from("ziyadah")
-      .update({
-        santri_id: parseInt(santri_id, 10),
-        date,
-        surat: parseInt(surat, 10),
-        ayat_mulai: parseInt(ayat_mulai, 10),
-        ayat_selesai: parseInt(ayat_selesai, 10),
-      })
+      .update(parsed.data)
       .eq("id", ziyadahId)
-      .select("id, santri_id, date, surat, ayat_mulai, ayat_selesai, santri(id, class, halaqah(name), users(name))")
+      .select("id, santri_id, date, surat, surat_selesai, ayat_mulai, ayat_selesai, jumlah_halaman, santri(id, class, halaqah(name), users(name))")
       .single();
 
     if (error || !updated) {

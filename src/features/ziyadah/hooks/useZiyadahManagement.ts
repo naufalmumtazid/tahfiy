@@ -6,6 +6,7 @@ import { getErrorMessage } from "@/utils/error";
 import { createZiyadah, deleteZiyadah, fetchHalaqahs, fetchSantriOptions, fetchZiyadah, updateZiyadah } from "../repository";
 import { Halaqah } from "@/features/halaqah/types";
 import { SantriOption, Ziyadah } from "../types";
+import type { ZiyadahFormValues } from "../schemas";
 
 export function useZiyadahManagement() {
   const [ziyadah, setZiyadah] = useState<Ziyadah[]>([]);
@@ -63,13 +64,7 @@ export function useZiyadahManagement() {
     setIsModalOpen(true);
   }, []);
 
-  const onSubmit = useCallback(async (values: {
-    santri_id: number;
-    date: string;
-    surat: number;
-    ayat_mulai: number;
-    ayat_selesai: number;
-  }) => {
+  const onSubmit = useCallback(async (values: ZiyadahFormValues) => {
     setFormError(null);
     setSubmitLoading(true);
 

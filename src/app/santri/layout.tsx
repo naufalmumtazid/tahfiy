@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import { FiMenu } from "react-icons/fi";
 
@@ -9,16 +10,16 @@ export default function SantriLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const activeTab = pathname === "/santri/hafalan" ? "hafalan" : "dashboard";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-sky-100 font-sans antialiased">
       <div className="flex flex-col lg:flex-row min-h-screen">
         
         {/* Pass state control ke Sidebar */}
-        <Sidebar 
-          setActiveTab={setActiveTab} 
+        <Sidebar
           isOpen={isSidebarOpen} 
           setIsOpen={setIsSidebarOpen} 
         />

@@ -2,24 +2,24 @@
 
 import React, { useState } from "react";
 import Select from "react-select";
-import { 
-  useReactTable, 
-  getCoreRowModel, 
-  getFilteredRowModel, 
-  getSortedRowModel, 
+import {
+  useReactTable,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
   getPaginationRowModel,
-  flexRender, 
+  flexRender,
   ColumnDef,
-  SortingState
+  SortingState,
 } from "@tanstack/react-table";
-import { 
-  FiSearch, 
-  FiChevronLeft, 
-  FiChevronRight, 
-  FiChevronsLeft, 
+import {
+  FiSearch,
+  FiChevronLeft,
+  FiChevronRight,
+  FiChevronsLeft,
   FiChevronsRight,
   FiArrowUp,
-  FiArrowDown
+  FiArrowDown,
 } from "react-icons/fi";
 
 interface DataTableProps<TData, TValue> {
@@ -27,7 +27,10 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   placeholderSearch?: string;
   renderTopActions?: () => React.ReactNode;
+  enablePagination?: boolean;
+  emptyMessage?: string;
   loading?: boolean;
+  tableClassName?: string;
 }
 
 export default function DataTable<TData, TValue>({
@@ -35,7 +38,10 @@ export default function DataTable<TData, TValue>({
   data,
   placeholderSearch = "Cari data...",
   renderTopActions,
+  enablePagination = true,
+  emptyMessage = "Tidak ada data ditemukan.",
   loading = false,
+  tableClassName = "",
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -53,7 +59,9 @@ export default function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getPaginationRowModel: enablePagination
+      ? getPaginationRowModel()
+      : undefined,
     initialState: {
       pagination: {
         pageSize: 10, // Default baris per halaman
@@ -62,7 +70,7 @@ export default function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="bg-white rounded-3xl border border-blue-100 shadow-sm p-6 overflow-hidden">
+    <div className="bg-white rounded-3xl border border-blue-100 shadow-sm p-3 sm:p-6 overflow-hidden">
       {/* Top Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="relative flex-1 max-w-md">
@@ -75,33 +83,50 @@ export default function DataTable<TData, TValue>({
             className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-sm bg-gray-50/50"
           />
         </div>
-        {renderTopActions && <div className="flex gap-2">{renderTopActions()}</div>}
+        {renderTopActions && (
+          <div className="flex gap-2">{renderTopActions()}</div>
+        )}
       </div>
 
       {/* Table Container */}
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className={`w-full text-sm ${tableClassName}`}>
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b border-blue-50 text-left text-gray-400 font-medium">
+              <tr
+                key={headerGroup.id}
+                className="border-b border-blue-50 text-left text-gray-400 font-medium"
+              >
                 {headerGroup.headers.map((header) => {
                   const isSortable = header.column.getCanSort();
                   const sortDirection = header.column.getIsSorted();
 
                   return (
-                    <th key={header.id} className="py-4 px-4 text-xs uppercase tracking-wider">
+                    <th
+                      key={header.id}
+                      className="py-4 px-4 text-xs uppercase tracking-wider"
+                    >
                       {header.isPlaceholder ? null : (
                         <div
                           className={`flex items-center gap-1 ${
-                            isSortable ? "cursor-pointer select-none hover:text-gray-700" : ""
+                            isSortable
+                              ? "cursor-pointer select-none hover:text-gray-700"
+                              : ""
                           }`}
                           onClick={header.column.getToggleSortingHandler()}
                         >
-                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                           {isSortable && (
                             <span className="text-gray-400 shrink-0">
-                              {sortDirection === "asc" && <FiArrowUp className="w-3.5 h-3.5 text-blue-600" />}
-                              {sortDirection === "desc" && <FiArrowDown className="w-3.5 h-3.5 text-blue-600" />}
+                              {sortDirection === "asc" && (
+                                <FiArrowUp className="w-3.5 h-3.5 text-blue-600" />
+                              )}
+                              {sortDirection === "desc" && (
+                                <FiArrowDown className="w-3.5 h-3.5 text-blue-600" />
+                              )}
                               {!sortDirection && (
                                 <div className="flex flex-col opacity-30 group-hover:opacity-100 scale-75">
                                   <FiArrowUp className="w-2.5 h-2.5 -mb-1" />
@@ -124,23 +149,34 @@ export default function DataTable<TData, TValue>({
                 <tr key={i} className="animate-pulse">
                   {Array.from({ length: columns.length }).map((_, j) => (
                     <td key={j} className="py-4 px-4">
-                      <div className={`h-4 bg-gray-100 rounded ${j === 1 ? "w-40" : "w-12"}`} />
+                      <div
+                        className={`h-4 bg-gray-100 rounded ${j === 1 ? "w-40" : "w-12"}`}
+                      />
                     </td>
                   ))}
                 </tr>
               ))
             ) : table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="py-10 text-center text-gray-400">
-                  Tidak ada data ditemukan.
+                <td
+                  colSpan={columns.length}
+                  className="py-10 text-center text-gray-400"
+                >
+                  {emptyMessage}
                 </td>
               </tr>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-blue-50/20 transition-colors">
+                <tr
+                  key={row.id}
+                  className="hover:bg-blue-50/20 transition-colors"
+                >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="py-4 px-4">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -151,21 +187,28 @@ export default function DataTable<TData, TValue>({
       </div>
 
       {/* Pagination Controls */}
-      {!loading && table.getPageCount() > 0 && (
+      {!loading && enablePagination && table.getPageCount() > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-blue-50/50 text-gray-500 text-xs font-medium">
-          <div className="flex items-center gap-2 min-w-[220px]">
+          <div className="flex flex-wrap items-center gap-2 sm:min-w-55">
             <span>Tampilkan</span>
             <div className="w-32">
               <Select
-                options={[5, 10, 20, 50].map((size) => ({ value: size, label: `${size} Data` }))}
-                value={{ value: table.getState().pagination.pageSize, label: `${table.getState().pagination.pageSize} Data` }}
+                options={[5, 10, 20, 50].map((size) => ({
+                  value: size,
+                  label: `${size} Data`,
+                }))}
+                value={{
+                  value: table.getState().pagination.pageSize,
+                  label: `${table.getState().pagination.pageSize} Data`,
+                }}
                 onChange={(option) => table.setPageSize(option?.value ?? 5)}
                 isSearchable={false}
                 classNamePrefix="react-select"
               />
             </div>
-            <span className="text-gray-400 ml-2">
-              Menampilkan {table.getRowModel().rows.length} dari {data.length} entri
+            <span className="text-gray-400 sm:ml-2">
+              Menampilkan {table.getRowModel().rows.length} dari {data.length}{" "}
+              entri
             </span>
           </div>
 
@@ -186,7 +229,8 @@ export default function DataTable<TData, TValue>({
             </button>
 
             <span className="px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl">
-              Halaman {table.getState().pagination.pageIndex + 1} dari {table.getPageCount()}
+              Halaman {table.getState().pagination.pageIndex + 1} dari{" "}
+              {table.getPageCount()}
             </span>
 
             <button
