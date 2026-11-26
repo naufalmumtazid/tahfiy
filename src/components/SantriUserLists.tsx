@@ -28,12 +28,22 @@ export default function SantriUserLists({ murojaah, ziyadah }: Props) {
       cell: ({ row }) => formatHafalanDate(row.original.date),
     },
     {
-      header: "Surat",
-      cell: ({ row }) => <span>{getSuratName(row.original.surat)}</span>,
+      header: "Surat / Ayat",
+      cell: ({ row }) => (
+        <span>
+          {getSuratName(row.original.surat)} ayat {row.original.ayat_mulai} –{" "}
+          {getSuratName(row.original.surat_selesai ?? row.original.surat)} ayat{" "}
+          {row.original.ayat_selesai}
+        </span>
+      ),
     },
-    { accessorKey: "ayat_mulai", header: "Ayat Mulai" },
-    { accessorKey: "ayat_selesai", header: "Ayat Selesai" },
-    { accessorKey: "halaqah_name", header: "Halaqah" },
+    {
+      header: "Halaman",
+      cell: ({ row }) =>
+        row.original.jumlah_halaman == null
+          ? "Belum dicatat"
+          : `${row.original.jumlah_halaman} halaman`,
+    },
   ];
 
   const ziyadahColumns: ColumnDef<Ziyadah>[] = [
@@ -50,12 +60,22 @@ export default function SantriUserLists({ murojaah, ziyadah }: Props) {
       cell: ({ row }) => formatHafalanDate(row.original.date),
     },
     {
-      header: "Surat",
-      cell: ({ row }) => <span>{getSuratName(row.original.surat)}</span>,
+      header: "Surat / Ayat",
+      cell: ({ row }) => (
+        <span>
+          {getSuratName(row.original.surat)} ayat {row.original.ayat_mulai} –{" "}
+          {getSuratName(row.original.surat_selesai ?? row.original.surat)} ayat{" "}
+          {row.original.ayat_selesai}
+        </span>
+      ),
     },
-    { accessorKey: "ayat_mulai", header: "Ayat Mulai" },
-    { accessorKey: "ayat_selesai", header: "Ayat Selesai" },
-    { accessorKey: "halaqah_name", header: "Halaqah" },
+    {
+      header: "Halaman",
+      cell: ({ row }) =>
+        row.original.jumlah_halaman == null
+          ? "Belum dicatat"
+          : `${row.original.jumlah_halaman} halaman`,
+    },
   ];
 
   return (
