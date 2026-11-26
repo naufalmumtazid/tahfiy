@@ -19,6 +19,15 @@ export async function fetchWeeklyExam(
   return data.passed;
 }
 
+export async function fetchSantriWeeklyExam(
+  weekStart: string,
+): Promise<boolean> {
+  const query = new URLSearchParams({ week_start: weekStart });
+  const response = await fetch(`/api/ujian-mingguan?${query}`);
+  const data = await handleJson<{ passed: boolean }>(response);
+  return data.passed;
+}
+
 export async function markWeeklyExamPassed(
   santriId: number,
   weekStart: string,
