@@ -12,6 +12,8 @@ import {
   FiTrash2,
   FiUserPlus,
   FiAlertCircle,
+  FiUsers,
+  FiUser,
   FiBookOpen,
   FiCalendar,
 } from "react-icons/fi";
@@ -21,7 +23,6 @@ import Modal from "@/components/Modal";
 import { getErrorMessage } from "@/utils/error";
 import { getSuratName } from "@/utils/surat";
 import { HafalanRangeFields } from "@/features/hafalan/components/HafalanRangeFields";
-import { HalaqahSectionTabs } from "@/features/hafalan/components/HalaqahSectionTabs";
 import { WeeklySantriSummary } from "@/features/hafalan/components/WeeklySantriSummary";
 import { useWeeklyExam } from "@/features/hafalan/hooks/useWeeklyExam";
 import {
@@ -548,7 +549,83 @@ export default function HalaqahDetailPage() {
         showSearch={false}
       />
 
-      <HalaqahSectionTabs activeTab={activeTab} onChange={setActiveTab} />
+      {/* 3 Big Premium Card Buttons */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <button
+          onClick={() => setActiveTab("santri")}
+          className={`p-6 rounded-3xl border text-left transition-all cursor-pointer ${
+            activeTab === "santri"
+              ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20"
+              : "bg-white border-blue-100 text-gray-800 hover:border-blue-200 hover:shadow-sm"
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <div
+              className={`p-3 rounded-2xl ${activeTab === "santri" ? "bg-white/15" : "bg-blue-50 text-blue-600"}`}
+            >
+              <FiUsers className="w-6 h-6" />
+            </div>
+            <div>
+              <p
+                className={`text-xs font-semibold uppercase tracking-wider ${activeTab === "santri" ? "text-blue-100" : "text-gray-400"}`}
+              >
+                Informasi
+              </p>
+              <h4 className="text-lg font-bold mt-0.5">Data Santri</h4>
+            </div>
+          </div>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("ziyadah")}
+          className={`p-6 rounded-3xl border text-left transition-all cursor-pointer ${
+            activeTab === "ziyadah"
+              ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20"
+              : "bg-white border-blue-100 text-gray-800 hover:border-blue-200 hover:shadow-sm"
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <div
+              className={`p-3 rounded-2xl ${activeTab === "ziyadah" ? "bg-white/15" : "bg-blue-50 text-blue-600"}`}
+            >
+              <FiBookOpen className="w-6 h-6" />
+            </div>
+            <div>
+              <p
+                className={`text-xs font-semibold uppercase tracking-wider ${activeTab === "ziyadah" ? "text-blue-100" : "text-gray-400"}`}
+              >
+                Setoran Baru
+              </p>
+              <h4 className="text-lg font-bold mt-0.5">Menu Ziyadah</h4>
+            </div>
+          </div>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("murojaah")}
+          className={`p-6 rounded-3xl border text-left transition-all cursor-pointer ${
+            activeTab === "murojaah"
+              ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20"
+              : "bg-white border-blue-100 text-gray-800 hover:border-blue-200 hover:shadow-sm"
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <div
+              className={`p-3 rounded-2xl ${activeTab === "murojaah" ? "bg-white/15" : "bg-blue-50 text-blue-600"}`}
+            >
+              <FiCalendar className="w-6 h-6" />
+            </div>
+            <div>
+              <p
+                className={`text-xs font-semibold uppercase tracking-wider ${activeTab === "murojaah" ? "text-blue-100" : "text-gray-400"}`}
+              >
+                Tsunnaiyyah Hafalan
+              </p>
+              <h4 className="text-lg font-bold mt-0.5">Menu Tsunnaiyyah</h4>
+            </div>
+          </div>
+        </button>
+      </div>
 
       {selectedRecordSantri &&
         (activeTab === "ziyadah" || activeTab === "murojaah") && (
@@ -567,6 +644,34 @@ export default function HalaqahDetailPage() {
             onChangeWeek={setSelectedWeekStart}
             onChangeSantri={() => setActiveTab("santri")}
           />
+        )}
+
+      {selectedRecordSantri &&
+        (activeTab === "ziyadah" || activeTab === "murojaah") && (
+          <section className="mb-6 flex flex-col gap-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-700 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-blue-600">
+                <FiUser className="h-5 w-5" />
+              </div>
+
+              <div className="min-w-0">
+                <p className="wrap-break-word font-semibold text-gray-800">
+                  {selectedRecordSantri.name}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Kelas: {selectedRecordSantri.class}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("santri")}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-100 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-white/50 hover:border-blue-200 sm:w-auto"
+            >
+              <FiArrowLeft className="h-4 w-4" /> Ganti santri
+            </button>
+          </section>
         )}
 
       {/* Dynamic Tables rendering depending on active tab */}
