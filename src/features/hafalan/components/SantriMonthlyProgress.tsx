@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { FiCheck, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import type { Murojaah } from "@/features/murojaah/types";
 import type { Ziyadah } from "@/features/ziyadah/types";
 import {
@@ -74,7 +74,7 @@ export function SantriMonthlyProgress({
   }, []);
 
   const barHeight = (pages: number) =>
-    pages === 0 ? 0 : Math.max((pages / maxPages) * 82, 4);
+    pages === 0 ? 0 : Math.max((pages / maxPages) * 88, 4);
 
   return (
     <section className="mb-6 rounded-2xl border border-blue-100 bg-white p-5 shadow-sm sm:p-6">
@@ -140,7 +140,7 @@ export function SantriMonthlyProgress({
             </strong>
           </span>
           <span className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-sm bg-cyan-500" />
+            <span className="h-3 w-3 rounded-sm bg-emerald-600" />
             Murojaah
             <strong className="text-gray-700">
               {monthTotals.murojaah} halaman
@@ -171,99 +171,148 @@ export function SantriMonthlyProgress({
       <div
         key={monthStart}
         role="group"
-        className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
+        className="overflow-x-auto"
         aria-label={`Diagram progres hafalan bulan ${formatMonth(monthStart)}`}
       >
-        {monthlyProgress.map((week) => {
-          const ziyadahHeight = animateBars
-            ? barHeight(week.ziyadahPages)
-            : 0;
-          const murojaahHeight = animateBars
-            ? barHeight(week.murojaahPages)
-            : 0;
-          const examPassed = passedWeeks[week.weekStart];
-
-          return (
+        <div className="min-w-[560px] pb-1">
+          <div className="relative h-48">
             <div
-              key={week.weekStart}
-              className="rounded-2xl border border-blue-50 bg-blue-50/30 p-3"
+              className="pointer-events-none absolute inset-y-0 left-10 right-0 flex flex-col justify-between"
+              aria-hidden="true"
             >
-              <div className="relative h-40 border-b border-blue-100">
-                <div className="absolute inset-x-1 bottom-0 flex h-full items-end justify-center gap-3">
-                  <div className="relative flex h-full w-8 items-end">
-                    <span
-                      className="absolute left-1/2 -translate-x-1/2 text-[11px] font-semibold text-blue-700"
-                      style={{ bottom: `calc(${ziyadahHeight}% + 4px)` }}
-                    >
-                      {week.ziyadahPages}
+              {Array.from({ length: 5 }, (_, index) => (
+                <div
+                  key={index}
+                  className="relative border-t border-dashed border-blue-100"
+                >
+                  {(index === 0 ||
+                    index === 4 ||
+                    (index === 2 && maxPages > 1)) && (
+                    <span className="absolute -left-9 -top-2 w-7 text-right text-[10px] text-gray-400">
+                      {index === 0
+                        ? maxPages
+                        : index === 4
+                          ? 0
+                          : Math.round(maxPages / 2)}
                     </span>
-                    <div
-                      role="img"
-                      aria-label={`${week.ziyadahPages} halaman Ziyadah`}
-                      className="w-full rounded-t-md bg-blue-600 transition-[height] duration-700 ease-out motion-reduce:transition-none"
-                      style={{ height: `${ziyadahHeight}%` }}
-                    />
-                  </div>
-                  <div className="relative flex h-full w-8 items-end">
-                    <span
-                      className="absolute left-1/2 -translate-x-1/2 text-[11px] font-semibold text-cyan-700"
-                      style={{ bottom: `calc(${murojaahHeight}% + 4px)` }}
-                    >
-                      {week.murojaahPages}
-                    </span>
-                    <div
-                      role="img"
-                      aria-label={`${week.murojaahPages} halaman Murojaah`}
-                      className="w-full rounded-t-md bg-cyan-500 transition-[height] duration-700 ease-out motion-reduce:transition-none"
-                      style={{ height: `${murojaahHeight}%` }}
-                    />
-                  </div>
+                  )}
                 </div>
-              </div>
-              <p className="mt-2 text-center text-xs font-semibold text-gray-700">
-                Pekan {week.index}
-              </p>
-              <p className="mt-0.5 text-center text-[10px] text-gray-500">
-                {new Intl.DateTimeFormat("id-ID", {
-                  day: "numeric",
-                  month: "short",
-                  timeZone: "UTC",
-                }).format(new Date(`${week.startDate}T00:00:00.000Z`))}
-                {" – "}
-                {new Intl.DateTimeFormat("id-ID", {
-                  day: "numeric",
-                  month: "short",
-                  timeZone: "UTC",
-                }).format(new Date(`${week.endDate}T00:00:00.000Z`))}
-              </p>
-              <p
-                className={`mt-2 flex min-h-7 items-center justify-center gap-1 rounded-lg px-1.5 py-1 text-center text-[10px] font-semibold ${
-                  examLoading
-                    ? "bg-gray-100 text-gray-500"
-                    : examPassed
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "bg-gray-100 text-gray-600"
-                }`}
-                aria-label={
-                  examLoading
-                    ? `Status ujian pekan ${week.index} sedang dimuat`
-                    : examPassed
-                      ? `Ujian pekan ${week.index} lulus`
-                      : `Ujian pekan ${week.index} belum ditandai`
-                }
-              >
-                {examPassed && <FiCheck className="h-3 w-3 shrink-0" />}
-                {examLoading
-                  ? "Memuat ujian"
-                  : examPassed
-                    ? "Lulus"
-                    : examError
-                      ? "Status tidak tersedia"
-                      : "Belum ditandai"}
-              </p>
+              ))}
             </div>
-          );
-        })}
+            <div
+              className="absolute inset-y-0 left-10 right-0 grid"
+              style={{
+                gridTemplateColumns: `repeat(${monthlyProgress.length}, minmax(0, 1fr))`,
+              }}
+            >
+              {monthlyProgress.map((week) => {
+                const ziyadahHeight = animateBars
+                  ? barHeight(week.ziyadahPages)
+                  : 0;
+                const murojaahHeight = animateBars
+                  ? barHeight(week.murojaahPages)
+                  : 0;
+                const examPassed = passedWeeks[week.weekStart];
+                const examStatus = examLoading
+                  ? "Status ujian pekanan sedang dimuat"
+                  : examError
+                    ? "Status ujian pekanan tidak tersedia"
+                    : examPassed
+                      ? "Lulus Ujian Pekanan"
+                      : "Belum ditandai Ujian Pekanan";
+
+                return (
+                  <div
+                    key={week.weekStart}
+                    role="group"
+                    aria-label={`Pekan ${week.index}`}
+                    className="relative flex h-full items-end justify-center gap-2 px-1"
+                  >
+                    <button
+                      type="button"
+                      title={`Ziyadah - ${week.ziyadahPages} halaman - ${examStatus}`}
+                      aria-label={`Pekan ${week.index}, Ziyadah, ${week.ziyadahPages} halaman, ${examStatus}`}
+                      className="relative flex w-8 shrink-0 cursor-help items-end justify-center rounded-t-md outline-none transition-[height] duration-700 ease-out hover:brightness-110 focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none"
+                      style={{
+                        height: `${Math.max(ziyadahHeight, 7)}%`,
+                      }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="absolute -top-5 left-1/2 -translate-x-1/2 text-[11px] font-semibold text-blue-700"
+                      >
+                        {week.ziyadahPages}
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-x-0 bottom-0 rounded-t-md bg-blue-600"
+                        style={{
+                          height:
+                            animateBars && week.ziyadahPages > 0
+                              ? "100%"
+                              : "0%",
+                        }}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      title={`Murojaah - ${week.murojaahPages} halaman - ${examStatus}`}
+                      aria-label={`Pekan ${week.index}, Murojaah, ${week.murojaahPages} halaman, ${examStatus}`}
+                      className="relative flex w-8 shrink-0 cursor-help items-end justify-center rounded-t-md outline-none transition-[height] duration-700 ease-out hover:brightness-110 focus-visible:ring-2 focus-visible:ring-emerald-600 motion-reduce:transition-none"
+                      style={{
+                        height: `${Math.max(murojaahHeight, 7)}%`,
+                      }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="absolute -top-5 left-1/2 -translate-x-1/2 text-[11px] font-semibold text-emerald-700"
+                      >
+                        {week.murojaahPages}
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-x-0 bottom-0 rounded-t-md bg-emerald-600"
+                        style={{
+                          height:
+                            animateBars && week.murojaahPages > 0
+                              ? "100%"
+                              : "0%",
+                        }}
+                      />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div
+            className="grid pl-10"
+            style={{
+              gridTemplateColumns: `repeat(${monthlyProgress.length}, minmax(0, 1fr))`,
+            }}
+          >
+            {monthlyProgress.map((week) => (
+              <div key={week.weekStart} className="px-1 pt-2 text-center">
+                <p className="text-xs font-semibold text-gray-700">
+                  Pekan {week.index}
+                </p>
+                <p className="mt-0.5 text-[10px] text-gray-500">
+                  {new Intl.DateTimeFormat("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    timeZone: "UTC",
+                  }).format(new Date(`${week.startDate}T00:00:00.000Z`))}
+                  {" – "}
+                  {new Intl.DateTimeFormat("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    timeZone: "UTC",
+                  }).format(new Date(`${week.endDate}T00:00:00.000Z`))}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );
