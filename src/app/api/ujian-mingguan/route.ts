@@ -33,8 +33,32 @@ export async function GET(request: Request) {
     }
 
     const searchParams = new URL(request.url).searchParams;
+    const weekStartsParam = searchParams.get("week_starts");
+    const weekStarts = weekStartsParam?.split(",") ?? [];
     const weekStart = searchParams.get("week_start");
-    if (!weekStart || !isMondayDate(weekStart)) {
+    const isBatchRequest = weekStartsParam !== null;
+
+    if (isBatchRequest && payload.role !== "santri") {
+      return NextResponse.json(
+        { error: "Unauthorized access" },
+        { status: 403 },
+      );
+    }
+
+    if (
+      isBatchRequest &&
+      (weekStarts.length < 1 ||
+        weekStarts.length > 6 ||
+        new Set(weekStarts).size !== weekStarts.length ||
+        !weekStarts.every(isMondayDate))
+    ) {
+      return NextResponse.json(
+        { error: "Parameter pekan tidak valid." },
+        { status: 400 },
+      );
+    }
+
+    if (!isBatchRequest && (!weekStart || !isMondayDate(weekStart))) {
       return NextResponse.json({ error: "Parameter pekan tidak valid." }, { status: 400 });
     }
 
@@ -70,6 +94,32 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Parameter santri dan pekan tidak valid." }, { status: 400 });
       }
       santriId = parsed.data.santri_id;
+    }
+
+    if (isBatchRequest) {
+      const { data, error } = await supabase
+        .from("ujian_mingguan")
+        .select("week_start")
+        .eq("santri_id", santriId)
+        .in("week_start", weekStarts);
+
+      if (error) throw error;
+
+      const passedWeeks: Record<string, boolean> = Object.fromEntries(
+        weekStarts.map((start) => [start, false]),
+      );
+      for (const row of data ?? []) {
+        passedWeeks[String(row.week_start)] = true;
+      }
+
+      return NextResponse.json({ passedWeeks });
+    }
+
+    if (!weekStart) {
+      return NextResponse.json(
+        { error: "Parameter pekan tidak valid." },
+        { status: 400 },
+      );
     }
 
     const { data, error } = await supabase

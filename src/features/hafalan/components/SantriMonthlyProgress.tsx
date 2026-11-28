@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FiCheck, FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import type { Murojaah } from "@/features/murojaah/types";
-import type { Ziyadah } from "@/features/ziyadah/types";
+import type { HafalanProgressEntry } from "@/features/hafalan/types";
 import {
   formatMonth,
   getMonthWeeks,
@@ -14,8 +13,8 @@ import {
 interface SantriMonthlyProgressProps {
   monthStart: string;
   currentMonthStart: string;
-  murojaah: Murojaah[];
-  ziyadah: Ziyadah[];
+  murojaah: HafalanProgressEntry[];
+  ziyadah: HafalanProgressEntry[];
   passedWeeks: Record<string, boolean>;
   examLoading: boolean;
   examError: string | null;
@@ -37,24 +36,47 @@ export function SantriMonthlyProgress({
   const [selectedBar, setSelectedBar] = useState<string | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
   const weeks = useMemo(() => getMonthWeeks(monthStart), [monthStart]);
-  const monthlyProgress = useMemo(
-    () =>
-      weeks.map((week) => {
-        const inWeek = (date: string) =>
-          date >= week.startDate && date <= week.endDate;
+  const monthlyProgress = useMemo(() => {
+    const weekByDate = new Map<string, string>();
+    const totals = new Map(
+      weeks.map((week) => [
+        week.weekStart,
+        { murojaahPages: 0, ziyadahPages: 0 },
+      ]),
+    );
 
-        return {
-          ...week,
-          murojaahPages: murojaah
-            .filter((item) => inWeek(item.date))
-            .reduce((total, item) => total + (item.jumlah_halaman ?? 0), 0),
-          ziyadahPages: ziyadah
-            .filter((item) => inWeek(item.date))
-            .reduce((total, item) => total + (item.jumlah_halaman ?? 0), 0),
-        };
-      }),
-    [murojaah, weeks, ziyadah],
-  );
+    for (const week of weeks) {
+      const date = new Date(`${week.startDate}T00:00:00.000Z`);
+      for (let day = 0; day < 7; day += 1) {
+        weekByDate.set(date.toISOString().slice(0, 10), week.weekStart);
+        date.setUTCDate(date.getUTCDate() + 1);
+      }
+    }
+
+    const addPages = (
+      activities: HafalanProgressEntry[],
+      activityType: "murojaahPages" | "ziyadahPages",
+    ) => {
+      for (const activity of activities) {
+        const weekStart = weekByDate.get(activity.date);
+        const weekTotals = weekStart ? totals.get(weekStart) : undefined;
+        if (weekTotals) {
+          weekTotals[activityType] += activity.jumlah_halaman ?? 0;
+        }
+      }
+    };
+
+    addPages(murojaah, "murojaahPages");
+    addPages(ziyadah, "ziyadahPages");
+
+    return weeks.map((week) => {
+      const weekTotals = totals.get(week.weekStart) ?? {
+        murojaahPages: 0,
+        ziyadahPages: 0,
+      };
+      return { ...week, ...weekTotals };
+    });
+  }, [murojaah, weeks, ziyadah]);
   const maxPages = Math.max(
     1,
     ...monthlyProgress.flatMap((week) => [

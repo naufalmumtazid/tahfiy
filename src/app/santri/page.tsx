@@ -1,115 +1,26 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import Header from "@/components/Header";
 import { SantriMonthlyProgress } from "@/features/hafalan/components/SantriMonthlyProgress";
-import { useSantriHafalanData } from "@/features/hafalan/hooks/useSantriHafalanData";
 import {
-  fetchSantriWeeklyExam,
-} from "@/features/hafalan/repository";
+  useSantriDashboardData,
+  useSantriWeeklyExamData,
+} from "@/features/hafalan/hooks/useSantriDashboardData";
 import {
   formatMonth,
   getCurrentMonthStart,
-  getMonthWeeks,
 } from "@/features/hafalan/monthly";
-import { getErrorMessage } from "@/utils/error";
 
 export default function SantriDashboard() {
-  const { user, murojaah, ziyadah, loading, error } = useSantriHafalanData();
   const [monthStart, setMonthStart] = useState(getCurrentMonthStart);
-  const [examState, setExamState] = useState(() => ({
-    monthStart: getCurrentMonthStart(),
-    passedWeeks: {} as Record<string, boolean>,
-    loading: true,
-    error: null as string | null,
-  }));
-  const currentExamState =
-    examState.monthStart === monthStart
-      ? examState
-      : {
-          monthStart,
-          passedWeeks: {},
-          loading: Boolean(user),
-          error: null,
-        };
+  const { data, loading, error } = useSantriDashboardData(monthStart);
+  const examState = useSantriWeeklyExamData(monthStart);
   const currentMonthStart = getCurrentMonthStart();
-
-  useEffect(() => {
-    if (!user || user.role !== "santri") return;
-
-    let active = true;
-    const weeks = getMonthWeeks(monthStart);
-
-    void Promise.all(
-      weeks.map(async (week) => [
-        week.weekStart,
-        await fetchSantriWeeklyExam(week.weekStart),
-      ] as const),
-    )
-      .then((results) => {
-        if (active) {
-          setExamState({
-            monthStart,
-            passedWeeks: Object.fromEntries(results),
-            loading: false,
-            error: null,
-          });
-        }
-      })
-      .catch((cause: unknown) => {
-        if (active) {
-          setExamState({
-            monthStart,
-            passedWeeks: {},
-            loading: false,
-            error: getErrorMessage(cause),
-          });
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [monthStart, user]);
-
-  const selectedWeeks = useMemo(() => getMonthWeeks(monthStart), [monthStart]);
-  const monthlyMurojaah = useMemo(
-    () =>
-      murojaah.filter((activity) =>
-        selectedWeeks.some(
-          (week) =>
-            activity.date >= week.startDate && activity.date <= week.endDate,
-        ),
-      ),
-    [murojaah, selectedWeeks],
-  );
-  const monthlyZiyadah = useMemo(
-    () =>
-      ziyadah.filter((activity) =>
-        selectedWeeks.some(
-          (week) =>
-            activity.date >= week.startDate && activity.date <= week.endDate,
-        ),
-      ),
-    [selectedWeeks, ziyadah],
-  );
-  const lastActivity = useMemo(() => {
-    const activities = [
-      ...murojaah.map((activity) => ({
-        ...activity,
-        activityType: "Murojaah" as const,
-      })),
-      ...ziyadah.map((activity) => ({
-        ...activity,
-        activityType: "Ziyadah" as const,
-      })),
-    ];
-
-    return activities.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-    )[0];
-  }, [murojaah, ziyadah]);
-  const santriIdentity = murojaah[0] ?? ziyadah[0];
+  const user = data?.user;
+  const murojaah = data?.murojaah ?? [];
+  const ziyadah = data?.ziyadah ?? [];
+  const santriIdentity = data?.identity;
 
   return (
     <>
@@ -153,7 +64,7 @@ export default function SantriDashboard() {
                 Murojaah
               </p>
               <p className="mt-3 text-2xl font-bold text-gray-800">
-                {monthlyMurojaah.length}
+                {murojaah.length}
               </p>
               <p className="mt-1 text-xs capitalize text-gray-400">
                 Catatan pekan {formatMonth(monthStart)}
@@ -164,7 +75,7 @@ export default function SantriDashboard() {
                 Ziyadah
               </p>
               <p className="mt-3 text-2xl font-bold text-gray-800">
-                {monthlyZiyadah.length}
+                {ziyadah.length}
               </p>
               <p className="mt-1 text-xs capitalize text-gray-400">
                 Catatan pekan {formatMonth(monthStart)}
@@ -172,21 +83,20 @@ export default function SantriDashboard() {
             </div>
           </div>
 
-          {lastActivity && (
+          {data?.latestActivity && (
             <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-blue-100 bg-blue-50/40 p-4 text-sm text-blue-700 shadow-sm sm:block">
               Aktivitas terakhir:{" "}
               <span className="font-semibold">
-                {lastActivity.activityType}
+                {data.latestActivity.activityType}
                 {" — "}
-                {new Date(`${lastActivity.date}T00:00:00`).toLocaleDateString(
-                  "id-ID",
-                  {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  },
-                )}
+                {new Date(
+                  `${data.latestActivity.date}T00:00:00`,
+                ).toLocaleDateString("id-ID", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
               </span>
             </div>
           )}
@@ -197,9 +107,9 @@ export default function SantriDashboard() {
             currentMonthStart={currentMonthStart}
             murojaah={murojaah}
             ziyadah={ziyadah}
-            passedWeeks={currentExamState.passedWeeks}
-            examLoading={currentExamState.loading}
-            examError={currentExamState.error}
+            passedWeeks={examState.passedWeeks}
+            examLoading={examState.loading}
+            examError={examState.error}
             onChangeMonth={setMonthStart}
           />
         </>
