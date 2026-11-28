@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense } from "react";
-import Select from "react-select";
+import Select from "@/components/DeferredSelect";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FiUserPlus, FiEdit2, FiTrash2, FiSearch, FiAlertCircle, FiArrowLeft } from "react-icons/fi";

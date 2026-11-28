@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Select from "react-select";
+import Select from "@/components/DeferredSelect";
 import { FiUserPlus, FiEdit2, FiTrash2, FiSearch, FiAlertCircle } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Header from "@/components/Header";

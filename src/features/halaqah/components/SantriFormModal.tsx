@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Select from "react-select";
+import Select from "@/components/DeferredSelect";
 import Modal from "@/components/Modal";
 import { HalaqahItem, CreateSantriPayload, SantriItem, UpdateSantriPayload } from "../types";
 

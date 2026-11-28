@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Select from "react-select";
 import {
   useReactTable,
   getCoreRowModel,
@@ -192,19 +191,20 @@ export default function DataTable<TData, TValue>({
           <div className="flex flex-wrap items-center gap-2 sm:min-w-55">
             <span>Tampilkan</span>
             <div className="w-32">
-              <Select
-                options={[5, 10, 20, 50].map((size) => ({
-                  value: size,
-                  label: `${size} Data`,
-                }))}
-                value={{
-                  value: table.getState().pagination.pageSize,
-                  label: `${table.getState().pagination.pageSize} Data`,
-                }}
-                onChange={(option) => table.setPageSize(option?.value ?? 5)}
-                isSearchable={false}
-                classNamePrefix="react-select"
-              />
+              <select
+                aria-label="Jumlah data per halaman"
+                value={table.getState().pagination.pageSize}
+                onChange={(event) =>
+                  table.setPageSize(Number(event.target.value))
+                }
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              >
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size} Data
+                  </option>
+                ))}
+              </select>
             </div>
             <span className="text-gray-400 sm:ml-2">
               Menampilkan {table.getRowModel().rows.length} dari {data.length}{" "}
