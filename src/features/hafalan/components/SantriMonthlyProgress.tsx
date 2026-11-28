@@ -69,7 +69,9 @@ export function SantriMonthlyProgress({
     }),
     { murojaah: 0, ziyadah: 0 },
   );
-  const passedCount = weeks.filter((week) => passedWeeks[week.weekStart]).length;
+  const passedCount = weeks.filter(
+    (week) => passedWeeks[week.weekStart],
+  ).length;
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => setAnimateBars(true));
@@ -231,7 +233,7 @@ export function SantriMonthlyProgress({
         aria-label={`Diagram progres hafalan bulan ${formatMonth(monthStart)}`}
         onMouseLeave={() => setHoveredBar(null)}
       >
-        <div className="min-w-[560px] pb-1">
+        <div className="min-w-140 pb-1">
           <div className="relative h-60">
             {activeWeek &&
               (activeActivityType === "ziyadah" ||
