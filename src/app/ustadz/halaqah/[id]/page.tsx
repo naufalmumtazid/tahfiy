@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import Select from "react-select";
+import Select from "@/components/DeferredSelect";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import {

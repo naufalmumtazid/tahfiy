@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FiCheck, FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import type { Murojaah } from "@/features/murojaah/types";
-import type { Ziyadah } from "@/features/ziyadah/types";
+import type { HafalanProgressEntry } from "@/features/hafalan/types";
 import {
   formatMonth,
   getMonthWeeks,
@@ -14,8 +13,8 @@ import {
 interface SantriMonthlyProgressProps {
   monthStart: string;
   currentMonthStart: string;
-  murojaah: Murojaah[];
-  ziyadah: Ziyadah[];
+  murojaah: HafalanProgressEntry[];
+  ziyadah: HafalanProgressEntry[];
   passedWeeks: Record<string, boolean>;
   examLoading: boolean;
   examError: string | null;
@@ -33,25 +32,51 @@ export function SantriMonthlyProgress({
   onChangeMonth,
 }: SantriMonthlyProgressProps) {
   const [animateBars, setAnimateBars] = useState(false);
+  const [hoveredBar, setHoveredBar] = useState<string | null>(null);
+  const [selectedBar, setSelectedBar] = useState<string | null>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
   const weeks = useMemo(() => getMonthWeeks(monthStart), [monthStart]);
-  const monthlyProgress = useMemo(
-    () =>
-      weeks.map((week) => {
-        const inWeek = (date: string) =>
-          date >= week.startDate && date <= week.endDate;
+  const monthlyProgress = useMemo(() => {
+    const weekByDate = new Map<string, string>();
+    const totals = new Map(
+      weeks.map((week) => [
+        week.weekStart,
+        { murojaahPages: 0, ziyadahPages: 0 },
+      ]),
+    );
 
-        return {
-          ...week,
-          murojaahPages: murojaah
-            .filter((item) => inWeek(item.date))
-            .reduce((total, item) => total + (item.jumlah_halaman ?? 0), 0),
-          ziyadahPages: ziyadah
-            .filter((item) => inWeek(item.date))
-            .reduce((total, item) => total + (item.jumlah_halaman ?? 0), 0),
-        };
-      }),
-    [murojaah, weeks, ziyadah],
-  );
+    for (const week of weeks) {
+      const date = new Date(`${week.startDate}T00:00:00.000Z`);
+      for (let day = 0; day < 7; day += 1) {
+        weekByDate.set(date.toISOString().slice(0, 10), week.weekStart);
+        date.setUTCDate(date.getUTCDate() + 1);
+      }
+    }
+
+    const addPages = (
+      activities: HafalanProgressEntry[],
+      activityType: "murojaahPages" | "ziyadahPages",
+    ) => {
+      for (const activity of activities) {
+        const weekStart = weekByDate.get(activity.date);
+        const weekTotals = weekStart ? totals.get(weekStart) : undefined;
+        if (weekTotals) {
+          weekTotals[activityType] += activity.jumlah_halaman ?? 0;
+        }
+      }
+    };
+
+    addPages(murojaah, "murojaahPages");
+    addPages(ziyadah, "ziyadahPages");
+
+    return weeks.map((week) => {
+      const weekTotals = totals.get(week.weekStart) ?? {
+        murojaahPages: 0,
+        ziyadahPages: 0,
+      };
+      return { ...week, ...weekTotals };
+    });
+  }, [murojaah, weeks, ziyadah]);
   const maxPages = Math.max(
     1,
     ...monthlyProgress.flatMap((week) => [
@@ -66,15 +91,69 @@ export function SantriMonthlyProgress({
     }),
     { murojaah: 0, ziyadah: 0 },
   );
-  const passedCount = weeks.filter((week) => passedWeeks[week.weekStart]).length;
+  const passedCount = weeks.filter(
+    (week) => passedWeeks[week.weekStart],
+  ).length;
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => setAnimateBars(true));
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (
+        !(target instanceof Element) ||
+        !chartRef.current?.contains(target) ||
+        !target.closest("[data-progress-bar]")
+      ) {
+        setSelectedBar(null);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelectedBar(null);
+        setHoveredBar(null);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   const barHeight = (pages: number) =>
-    pages === 0 ? 0 : Math.max((pages / maxPages) * 82, 4);
+    pages === 0 ? 0 : Math.max((pages / maxPages) * 88, 4);
+  const activeBar = selectedBar ?? hoveredBar;
+  const [activeWeekStart, activeActivityType] = activeBar?.split(":") ?? [];
+  const activeWeek = monthlyProgress.find(
+    (week) => week.weekStart === activeWeekStart,
+  );
+  const activeIsZiyadah = activeActivityType === "ziyadah";
+  const activePages = activeWeek
+    ? activeIsZiyadah
+      ? activeWeek.ziyadahPages
+      : activeWeek.murojaahPages
+    : 0;
+  const activeExamStatus = examLoading
+    ? "Memuat status ujian"
+    : examError
+      ? "Status ujian tidak tersedia"
+      : activeWeek && passedWeeks[activeWeek.weekStart]
+        ? "Lulus Ujian Pekanan"
+        : "Belum ditandai Ujian Pekanan";
+  const clearHoveredBarOnBlur = (relatedTarget: EventTarget | null) => {
+    if (
+      !(relatedTarget instanceof Node) ||
+      !chartRef.current?.contains(relatedTarget)
+    ) {
+      setHoveredBar(null);
+    }
+  };
 
   return (
     <section className="mb-6 rounded-2xl border border-blue-100 bg-white p-5 shadow-sm sm:p-6">
@@ -140,7 +219,7 @@ export function SantriMonthlyProgress({
             </strong>
           </span>
           <span className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-sm bg-cyan-500" />
+            <span className="h-3 w-3 rounded-sm bg-emerald-600" />
             Murojaah
             <strong className="text-gray-700">
               {monthTotals.murojaah} halaman
@@ -169,101 +248,224 @@ export function SantriMonthlyProgress({
       )}
 
       <div
+        ref={chartRef}
         key={monthStart}
         role="group"
-        className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
+        className="overflow-x-auto"
         aria-label={`Diagram progres hafalan bulan ${formatMonth(monthStart)}`}
+        onMouseLeave={() => setHoveredBar(null)}
       >
-        {monthlyProgress.map((week) => {
-          const ziyadahHeight = animateBars
-            ? barHeight(week.ziyadahPages)
-            : 0;
-          const murojaahHeight = animateBars
-            ? barHeight(week.murojaahPages)
-            : 0;
-          const examPassed = passedWeeks[week.weekStart];
-
-          return (
-            <div
-              key={week.weekStart}
-              className="rounded-2xl border border-blue-50 bg-blue-50/30 p-3"
-            >
-              <div className="relative h-40 border-b border-blue-100">
-                <div className="absolute inset-x-1 bottom-0 flex h-full items-end justify-center gap-3">
-                  <div className="relative flex h-full w-8 items-end">
+        <div className="min-w-140 pb-1">
+          <div className="relative h-60">
+            {activeWeek &&
+              (activeActivityType === "ziyadah" ||
+                activeActivityType === "murojaah") && (
+                <div
+                  id={`progress-info-${activeWeek.weekStart}-${activeActivityType}`}
+                  role="status"
+                  className="pointer-events-none absolute top-0 z-10 w-56 rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-left shadow-lg ring-1 ring-black/5"
+                  style={{
+                    left: `clamp(0px, calc(40px + ${((activeWeek.index - 0.5) / monthlyProgress.length) * 100}% - 7rem), calc(100% - 14rem))`,
+                  }}
+                >
+                  <div className="flex items-center gap-2">
                     <span
-                      className="absolute left-1/2 -translate-x-1/2 text-[11px] font-semibold text-blue-700"
-                      style={{ bottom: `calc(${ziyadahHeight}% + 4px)` }}
-                    >
-                      {week.ziyadahPages}
-                    </span>
-                    <div
-                      role="img"
-                      aria-label={`${week.ziyadahPages} halaman Ziyadah`}
-                      className="w-full rounded-t-md bg-blue-600 transition-[height] duration-700 ease-out motion-reduce:transition-none"
-                      style={{ height: `${ziyadahHeight}%` }}
+                      className={`h-2.5 w-2.5 shrink-0 rounded-sm ${
+                        activeIsZiyadah ? "bg-blue-600" : "bg-emerald-600"
+                      }`}
                     />
+                    <p className="text-xs font-semibold text-gray-800">
+                      {activeIsZiyadah ? "Ziyadah" : "Murojaah"}
+                      <span className="ml-1 font-medium text-gray-500">
+                        · Pekan {activeWeek.index}
+                      </span>
+                    </p>
                   </div>
-                  <div className="relative flex h-full w-8 items-end">
-                    <span
-                      className="absolute left-1/2 -translate-x-1/2 text-[11px] font-semibold text-cyan-700"
-                      style={{ bottom: `calc(${murojaahHeight}% + 4px)` }}
-                    >
-                      {week.murojaahPages}
-                    </span>
-                    <div
-                      role="img"
-                      aria-label={`${week.murojaahPages} halaman Murojaah`}
-                      className="w-full rounded-t-md bg-cyan-500 transition-[height] duration-700 ease-out motion-reduce:transition-none"
-                      style={{ height: `${murojaahHeight}%` }}
-                    />
-                  </div>
+                  <p className="mt-1.5 text-sm font-bold text-gray-800">
+                    {activePages} halaman
+                  </p>
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-600">
+                    {activeWeek &&
+                      passedWeeks[activeWeek.weekStart] &&
+                      !examLoading &&
+                      !examError && (
+                        <FiCheck className="h-3.5 w-3.5 text-emerald-600" />
+                      )}
+                    {activeExamStatus}
+                  </p>
                 </div>
-              </div>
-              <p className="mt-2 text-center text-xs font-semibold text-gray-700">
-                Pekan {week.index}
-              </p>
-              <p className="mt-0.5 text-center text-[10px] text-gray-500">
-                {new Intl.DateTimeFormat("id-ID", {
-                  day: "numeric",
-                  month: "short",
-                  timeZone: "UTC",
-                }).format(new Date(`${week.startDate}T00:00:00.000Z`))}
-                {" – "}
-                {new Intl.DateTimeFormat("id-ID", {
-                  day: "numeric",
-                  month: "short",
-                  timeZone: "UTC",
-                }).format(new Date(`${week.endDate}T00:00:00.000Z`))}
-              </p>
-              <p
-                className={`mt-2 flex min-h-7 items-center justify-center gap-1 rounded-lg px-1.5 py-1 text-center text-[10px] font-semibold ${
-                  examLoading
-                    ? "bg-gray-100 text-gray-500"
-                    : examPassed
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "bg-gray-100 text-gray-600"
-                }`}
-                aria-label={
-                  examLoading
-                    ? `Status ujian pekan ${week.index} sedang dimuat`
-                    : examPassed
-                      ? `Ujian pekan ${week.index} lulus`
-                      : `Ujian pekan ${week.index} belum ditandai`
-                }
-              >
-                {examPassed && <FiCheck className="h-3 w-3 shrink-0" />}
-                {examLoading
-                  ? "Memuat ujian"
-                  : examPassed
-                    ? "Lulus"
-                    : examError
-                      ? "Status tidak tersedia"
-                      : "Belum ditandai"}
-              </p>
+              )}
+            <div
+              className="pointer-events-none absolute inset-y-14 left-10 right-0 flex flex-col justify-between"
+              aria-hidden="true"
+            >
+              {Array.from({ length: 5 }, (_, index) => (
+                <div
+                  key={index}
+                  className="relative border-t border-dashed border-blue-100"
+                >
+                  {(index === 0 ||
+                    index === 4 ||
+                    (index === 2 && maxPages > 1)) && (
+                    <span className="absolute -left-9 -top-2 w-7 text-right text-[10px] text-gray-400">
+                      {index === 0
+                        ? maxPages
+                        : index === 4
+                          ? 0
+                          : Math.round(maxPages / 2)}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
-          );
-        })}
+            <div
+              className="absolute inset-y-14 left-10 right-0 grid"
+              style={{
+                gridTemplateColumns: `repeat(${monthlyProgress.length}, minmax(0, 1fr))`,
+              }}
+            >
+              {monthlyProgress.map((week) => {
+                const ziyadahHeight = animateBars
+                  ? barHeight(week.ziyadahPages)
+                  : 0;
+                const murojaahHeight = animateBars
+                  ? barHeight(week.murojaahPages)
+                  : 0;
+                const examPassed = passedWeeks[week.weekStart];
+                const examStatus = examLoading
+                  ? "Status ujian pekanan sedang dimuat"
+                  : examError
+                    ? "Status ujian pekanan tidak tersedia"
+                    : examPassed
+                      ? "Lulus Ujian Pekanan"
+                      : "Belum ditandai Ujian Pekanan";
+                const ziyadahBarId = `${week.weekStart}:ziyadah`;
+                const murojaahBarId = `${week.weekStart}:murojaah`;
+
+                return (
+                  <div
+                    key={week.weekStart}
+                    role="group"
+                    aria-label={`Pekan ${week.index}`}
+                    className="relative flex h-full items-end justify-center gap-2 px-1"
+                  >
+                    <button
+                      type="button"
+                      data-progress-bar
+                      aria-describedby={
+                        (selectedBar ?? hoveredBar) === ziyadahBarId
+                          ? `progress-info-${week.weekStart}-ziyadah`
+                          : undefined
+                      }
+                      aria-label={`Pekan ${week.index}, Ziyadah, ${week.ziyadahPages} halaman, ${examStatus}`}
+                      className="relative flex w-8 shrink-0 cursor-help items-end justify-center rounded-t-md outline-none transition-[height] duration-700 ease-out hover:brightness-110 focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none"
+                      style={{
+                        height: `${Math.max(ziyadahHeight, 7)}%`,
+                      }}
+                      onMouseEnter={() => setHoveredBar(ziyadahBarId)}
+                      onFocus={() => setHoveredBar(ziyadahBarId)}
+                      onBlur={(event) =>
+                        clearHoveredBarOnBlur(event.relatedTarget)
+                      }
+                      onClick={() => {
+                        setHoveredBar(null);
+                        setSelectedBar((active) =>
+                          active === ziyadahBarId ? null : ziyadahBarId,
+                        );
+                      }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="absolute -top-5 left-1/2 -translate-x-1/2 text-[11px] font-semibold text-blue-700"
+                      >
+                        {week.ziyadahPages}
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-x-0 bottom-0 rounded-t-md bg-blue-600"
+                        style={{
+                          height:
+                            animateBars && week.ziyadahPages > 0
+                              ? "100%"
+                              : "0%",
+                        }}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      data-progress-bar
+                      aria-describedby={
+                        (selectedBar ?? hoveredBar) === murojaahBarId
+                          ? `progress-info-${week.weekStart}-murojaah`
+                          : undefined
+                      }
+                      aria-label={`Pekan ${week.index}, Murojaah, ${week.murojaahPages} halaman, ${examStatus}`}
+                      className="relative flex w-8 shrink-0 cursor-help items-end justify-center rounded-t-md outline-none transition-[height] duration-700 ease-out hover:brightness-110 focus-visible:ring-2 focus-visible:ring-emerald-600 motion-reduce:transition-none"
+                      style={{
+                        height: `${Math.max(murojaahHeight, 7)}%`,
+                      }}
+                      onMouseEnter={() => setHoveredBar(murojaahBarId)}
+                      onFocus={() => setHoveredBar(murojaahBarId)}
+                      onBlur={(event) =>
+                        clearHoveredBarOnBlur(event.relatedTarget)
+                      }
+                      onClick={() => {
+                        setHoveredBar(null);
+                        setSelectedBar((active) =>
+                          active === murojaahBarId ? null : murojaahBarId,
+                        );
+                      }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="absolute -top-5 left-1/2 -translate-x-1/2 text-[11px] font-semibold text-emerald-700"
+                      >
+                        {week.murojaahPages}
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-x-0 bottom-0 rounded-t-md bg-emerald-600"
+                        style={{
+                          height:
+                            animateBars && week.murojaahPages > 0
+                              ? "100%"
+                              : "0%",
+                        }}
+                      />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div
+            className="grid pl-10"
+            style={{
+              gridTemplateColumns: `repeat(${monthlyProgress.length}, minmax(0, 1fr))`,
+            }}
+          >
+            {monthlyProgress.map((week) => (
+              <div key={week.weekStart} className="px-1 pt-2 text-center">
+                <p className="text-xs font-semibold text-gray-700">
+                  Pekan {week.index}
+                </p>
+                <p className="mt-0.5 text-[10px] text-gray-500">
+                  {new Intl.DateTimeFormat("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    timeZone: "UTC",
+                  }).format(new Date(`${week.startDate}T00:00:00.000Z`))}
+                  {" – "}
+                  {new Intl.DateTimeFormat("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    timeZone: "UTC",
+                  }).format(new Date(`${week.endDate}T00:00:00.000Z`))}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );
